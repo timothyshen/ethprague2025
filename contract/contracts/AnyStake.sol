@@ -89,6 +89,7 @@ contract AnyStake is OApp, OAppOptionsType3 {
         require(msg.value >= messagingFee.nativeFee + _amount, "Insufficient ETH sent");
 
         // Transfer the amount back to the user
+        // TODO: Need to do A -> B -> A
         (bool success, ) = payable(msg.sender).call{value: _amount}("");
         require(success, "ETH transfer failed");
 

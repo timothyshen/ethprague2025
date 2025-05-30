@@ -31,6 +31,7 @@ contract AnyStake is OApp, OAppOptionsType3 {
     /**
      * @notice Stakes tokens by locking them and sending a cross-chain composed message
      * @param _dstEid The endpoint ID of the destination chain
+     * @param _amount The amount to stake
      * @param _composedAddress The address of the composed contract (StakingAggregator) on destination chain
      * @param _options Additional options for message execution
      * @dev This demonstrates the A -> B1 -> B2 pattern where:
@@ -39,22 +40,28 @@ contract AnyStake is OApp, OAppOptionsType3 {
      */
     function deposit(
         uint32 _dstEid,
+        uint256 _amount,
         address _composedAddress,
         bytes calldata _options
     ) external payable returns (MessagingReceipt memory receipt) {
-        require(msg.value > 0, "Must send ETH to stake");
+        require(msg.value >= _amount, "Insufficient ETH sent");
+        require(_amount > 0, "Must stake a positive amount");
+
+        // Get the messaging fee quote
+        MessagingFee memory messagingFee = quote(_dstEid, OPERATION_DEPOSIT, _amount, msg.sender, _composedAddress, _options, false);
+        require(msg.value >= messagingFee.nativeFee + _amount, "Insufficient ETH sent");
         
         // Lock the tokens on source chain
-        lockedBalances[msg.sender] += msg.value;
+        lockedBalances[msg.sender] += _amount;
         
-        // Create payload with operation type, amount, user address, and composed address
-        bytes memory _payload = abi.encode(OPERATION_DEPOSIT, msg.value, msg.sender, _composedAddress);
+        // Create payload with operation type, stake amount, user address, and composed address
+        bytes memory _payload = abi.encode(OPERATION_DEPOSIT, _amount, msg.sender, _composedAddress);
         
-        // Send cross-chain message
-        receipt = _lzSend(_dstEid, _payload, _options, MessagingFee(msg.value, 0), payable(msg.sender));
+        // Send cross-chain message (use msg.value for gas fees)
+        receipt = _lzSend(_dstEid, _payload, _options, messagingFee, payable(msg.sender));
         
-        emit Deposited(msg.sender, msg.value);
-        emit ComposedMessageSent(msg.sender, msg.value, _composedAddress, _dstEid, OPERATION_DEPOSIT);
+        emit Deposited(msg.sender, _amount);
+        emit ComposedMessageSent(msg.sender, _amount, _composedAddress, _dstEid, OPERATION_DEPOSIT);
     }
 
     /**
@@ -72,15 +79,24 @@ contract AnyStake is OApp, OAppOptionsType3 {
         address _composedAddress,
         bytes calldata _options
     ) external payable returns (MessagingReceipt memory receipt) {
+
         require(lockedBalances[msg.sender] >= _amount, "Insufficient balance");
-        
         // Unlock the tokens on source chain
         lockedBalances[msg.sender] -= _amount;
-        payable(msg.sender).transfer(_amount);
+
+        // Get the messaging fee quote
+        MessagingFee memory messagingFee = quote(_dstEid, OPERATION_WITHDRAW, _amount, msg.sender, _composedAddress, _options, false);
+        require(msg.value >= messagingFee.nativeFee + _amount, "Insufficient ETH sent");
+
+        // Transfer the amount back to the user
+        (bool success, ) = payable(msg.sender).call{value: _amount}("");
+        require(success, "ETH transfer failed");
 
         // Create payload with withdraw operation type
         bytes memory _payload = abi.encode(OPERATION_WITHDRAW, _amount, msg.sender, _composedAddress);
-        receipt = _lzSend(_dstEid, _payload, _options, MessagingFee(msg.value, 0), payable(msg.sender));
+        
+        // Send cross-chain message (use msg.value for gas fees)
+        receipt = _lzSend(_dstEid, _payload, _options, messagingFee, payable(msg.sender));
         
         emit Withdrawn(msg.sender, _amount);
         emit ComposedMessageSent(msg.sender, _amount, _composedAddress, _dstEid, OPERATION_WITHDRAW);
@@ -108,6 +124,40 @@ contract AnyStake is OApp, OAppOptionsType3 {
     ) public view returns (MessagingFee memory fee) {
         bytes memory payload = abi.encode(_operation, _amount, _user, _composedAddress);
         fee = _quote(_dstEid, payload, _options, _payInLzToken);
+    }
+
+    /**
+     * @notice Get the quote for a deposit operation
+     * @param _dstEid Destination endpoint ID
+     * @param _amount Amount to deposit
+     * @param _composedAddress Composed contract address  
+     * @param _options Message execution options
+     * @return fee The messaging fee required
+     */
+    function getDepositQuote(
+        uint32 _dstEid,
+        uint256 _amount,
+        address _composedAddress,
+        bytes memory _options
+    ) external view returns (MessagingFee memory fee) {
+        return quote(_dstEid, OPERATION_DEPOSIT, _amount, msg.sender, _composedAddress, _options, false);
+    }
+
+    /**
+     * @notice Get the quote for a withdraw operation
+     * @param _dstEid Destination endpoint ID
+     * @param _amount Amount to withdraw
+     * @param _composedAddress Composed contract address
+     * @param _options Message execution options
+     * @return fee The messaging fee required
+     */
+    function getWithdrawQuote(
+        uint32 _dstEid,
+        uint256 _amount,
+        address _composedAddress,
+        bytes memory _options
+    ) external view returns (MessagingFee memory fee) {
+        return quote(_dstEid, OPERATION_WITHDRAW, _amount, msg.sender, _composedAddress, _options, false);
     }
 
     /**

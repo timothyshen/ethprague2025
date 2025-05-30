@@ -66,7 +66,8 @@ contract StakeAggregator is ILayerZeroComposer {
             totalStaked -= _amount;
             
             // Transfer the withdrawn amount back to the user
-            payable(_user).transfer(_amount);
+            (bool success, ) = payable(_user).call{value: _amount}("");
+            require(success, "ETH transfer failed");
             emit Withdrawn(_user, _amount);
             
         } else {
@@ -99,7 +100,8 @@ contract StakeAggregator is ILayerZeroComposer {
         stakedAmount[msg.sender] -= amount;
         totalStaked -= amount;
         
-        payable(msg.sender).transfer(amount);
+        (bool success, ) = payable(msg.sender).call{value: amount}("");
+        require(success, "ETH transfer failed");
         
         emit Withdrawn(msg.sender, amount);
     }

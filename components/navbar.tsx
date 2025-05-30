@@ -15,7 +15,6 @@ import { NetworkStatus } from "@/components/network-status"
 const navigation = [
   { name: "Stake", href: "/", icon: Coins },
   { name: "Dashboard", href: "/dashboard", icon: BarChart3 },
-  { name: "Bridge", href: "/bridge", icon: ArrowRight },
   { name: "Calculator", href: "/calculator", icon: Calculator },
 ]
 

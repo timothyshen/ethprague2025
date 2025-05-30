@@ -15,7 +15,6 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 
 // Add these imports at the top
 import { useStakingContract } from "@/hooks/use-staking-contract"
-import { useBridgeContract } from "@/hooks/use-bridge-contract"
 import { useContractEvents } from "@/hooks/use-contract-events"
 
 interface StakingPool {
@@ -58,20 +57,14 @@ export function StakingCard({ pool }: StakingCardProps) {
     claimRewards,
     totalStaked,
     apy,
-    getStakedAmount,
-    getPendingRewards,
+    stakedAmount,
+    pendingRewards,
     isPending: isStakingPending,
     isConfirming: isStakingConfirming,
   } = useStakingContract()
 
-  const { bridgeToEthereum, isPending: isBridgePending } = useBridgeContract(chainId)
-
   // Watch for contract events
   useContractEvents(address)
-
-  // Get user's staked amount and rewards
-  const { data: userStakedAmount } = getStakedAmount(address || "0x0")
-  const { data: userPendingRewards } = getPendingRewards(address || "0x0")
 
   const { data: balance } = useBalance({
     address,
@@ -82,7 +75,7 @@ export function StakingCard({ pool }: StakingCardProps) {
     ...pool,
     totalStaked: totalStaked,
     apy: apy,
-    userStaked: userStakedAmount ? (Number(userStakedAmount) / 1e18).toFixed(4) : "0.00",
+    userStaked: stakedAmount ? (Number(stakedAmount) / 1e18).toFixed(4) : "0.00",
   }
 
   const handleStakeAmountNext = () => {
@@ -124,11 +117,7 @@ export function StakingCard({ pool }: StakingCardProps) {
       if (chainId === 1) {
         // Direct staking on Ethereum
         await stake(stakeAmount)
-      } else {
-        // Bridge from other chains
-        await bridgeToEthereum(stakeAmount, address)
       }
-
       setStakeAmount("")
       setStakeStep("amount")
     } catch (error) {
@@ -147,7 +136,7 @@ export function StakingCard({ pool }: StakingCardProps) {
     }
   }
 
-  const isStaking = isStakingPending || isStakingConfirming || isBridgePending
+  const isStaking = isStakingPending || isStakingConfirming
 
   const selectedChainInfo = sourceChains.find((chain) => chain.id === selectedSourceChain)
 

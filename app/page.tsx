@@ -18,8 +18,8 @@ export default function HomePage() {
   const [stakingData, setStakingData] = useState({
     totalStaked: "0.00",
     apy: 12.5,
-    stakedAmount: "0.00",
-    pendingRewards: "0.00",
+    stakedAmount: null as string | null,
+    pendingRewards: null as string | null,
   })
 
   const { totalStaked, apy, stakedAmount, pendingRewards } = useStakingContract()

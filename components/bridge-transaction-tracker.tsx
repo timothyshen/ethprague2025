@@ -17,6 +17,10 @@ import {
   ChevronDown,
   ChevronUp,
   Bell,
+  Wallet,
+  Timer,
+  Lock,
+  Coins,
 } from "lucide-react"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { useToast } from "@/hooks/use-toast"
@@ -25,21 +29,18 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 
 // Define the transaction status types
-type TransactionStatus = "pending" | "processing" | "completed" | "failed"
+type TransactionStatus = "pending" | "processing" | "staking" | "completed" | "failed" | "unstaking"
 
 // Define the transaction interface
-interface BridgeTransaction {
+interface StakingTransaction {
   id: string
-  sourceChain: {
-    name: string
-    logo: string
-  }
-  destinationChain: {
+  network: {
     name: string
     logo: string
   }
   amount: string
   token: string
+  apr: string
   timestamp: string
   status: TransactionStatus
   hash: string
@@ -48,58 +49,83 @@ interface BridgeTransaction {
   totalSteps?: number
   error?: string
   lastUpdated?: number // Timestamp for last status update
+  stakeDuration?: string
+  rewards?: string
+  unlockDate?: string
 }
 
-// Mock data for bridge transactions
-const initialTransactions: BridgeTransaction[] = [
+// Mock data for staking transactions
+const initialTransactions: StakingTransaction[] = [
   {
     id: "tx1",
-    sourceChain: { name: "Flow", logo: "🌊" },
-    destinationChain: { name: "Ethereum", logo: "🔷" },
-    amount: "0.5",
+    network: { name: "Ethereum", logo: "🔷" },
+    amount: "10",
     token: "ETH",
+    apr: "4.5%",
     timestamp: "2024-01-20 14:30",
-    status: "processing",
+    status: "staking",
     hash: "0x1234...5678",
-    estimatedCompletionTime: "~10 minutes remaining",
+    estimatedCompletionTime: "~5 minutes remaining",
     currentStep: 2,
-    totalSteps: 4,
+    totalSteps: 3,
     lastUpdated: Date.now(),
+    stakeDuration: "30 days",
+    rewards: "0.012 ETH earned",
   },
   {
     id: "tx2",
-    sourceChain: { name: "Hedera", logo: "♦️" },
-    destinationChain: { name: "Ethereum", logo: "🔷" },
-    amount: "0.75",
-    token: "ETH",
+    network: { name: "Polygon", logo: "🟣" },
+    amount: "500",
+    token: "MATIC",
+    apr: "8.2%",
     timestamp: "2024-01-20 13:15",
     status: "pending",
     hash: "0x2345...6789",
     estimatedCompletionTime: "Waiting for confirmation",
     lastUpdated: Date.now(),
+    stakeDuration: "90 days",
   },
   {
     id: "tx3",
-    sourceChain: { name: "Flow", logo: "🌊" },
-    destinationChain: { name: "Ethereum", logo: "🔷" },
-    amount: "1.2",
+    network: { name: "Ethereum", logo: "🔷" },
+    amount: "5",
     token: "ETH",
+    apr: "4.2%",
     timestamp: "2024-01-20 10:45",
     status: "completed",
     hash: "0x3456...7890",
     lastUpdated: Date.now() - 3600000, // 1 hour ago
+    stakeDuration: "60 days",
+    rewards: "0.035 ETH earned",
+    unlockDate: "2024-03-20",
   },
   {
     id: "tx4",
-    sourceChain: { name: "Hedera", logo: "♦️" },
-    destinationChain: { name: "Ethereum", logo: "🔷" },
-    amount: "0.3",
-    token: "ETH",
+    network: { name: "Solana", logo: "◎" },
+    amount: "25",
+    token: "SOL",
+    apr: "6.8%",
     timestamp: "2024-01-19 16:20",
     status: "failed",
     hash: "0x4567...8901",
-    error: "Insufficient gas for transaction",
+    error: "Insufficient balance for staking",
     lastUpdated: Date.now() - 7200000, // 2 hours ago
+  },
+  {
+    id: "tx5",
+    network: { name: "Ethereum", logo: "🔷" },
+    amount: "15",
+    token: "ETH",
+    apr: "4.7%",
+    timestamp: "2024-01-18 09:30",
+    status: "unstaking",
+    hash: "0x5678...9012",
+    estimatedCompletionTime: "~10 minutes remaining",
+    currentStep: 1,
+    totalSteps: 2,
+    lastUpdated: Date.now() - 1800000, // 30 minutes ago
+    stakeDuration: "30 days",
+    rewards: "0.058 ETH earned",
   },
 ]
 
@@ -114,6 +140,18 @@ function getStatusBadge(status: TransactionStatus) {
         icon: <Loader2 className="h-3 w-3 mr-1 animate-spin" />,
         text: "Processing",
       }
+    case "staking":
+      return {
+        variant: "default" as const,
+        icon: <Lock className="h-3 w-3 mr-1" />,
+        text: "Staking"
+      }
+    case "unstaking":
+      return {
+        variant: "secondary" as const,
+        icon: <Timer className="h-3 w-3 mr-1" />,
+        text: "Unstaking"
+      }
     case "completed":
       return { variant: "default" as const, icon: <CheckCircle2 className="h-3 w-3 mr-1" />, text: "Completed" }
     case "failed":
@@ -121,14 +159,20 @@ function getStatusBadge(status: TransactionStatus) {
   }
 }
 
-// Component to display the steps of a bridge transaction
-function BridgeTransactionSteps({ transaction }: { transaction: BridgeTransaction }) {
-  const steps = [
-    { name: "Transaction Initiated", description: "Your transaction has been submitted to the source chain" },
-    { name: "Source Chain Confirmation", description: "Transaction confirmed on the source chain" },
-    { name: "Bridge Processing", description: "Assets are being transferred across chains" },
-    { name: "Destination Chain Confirmation", description: "Assets received on Ethereum" },
+// Component to display the steps of a staking transaction
+function StakingTransactionSteps({ transaction }: { transaction: StakingTransaction }) {
+  let steps = [
+    { name: "Transaction Initiated", description: "Your staking transaction has been submitted" },
+    { name: "Blockchain Confirmation", description: "Transaction confirmed on the blockchain" },
+    { name: "Staking Active", description: "Your assets are now staking and earning rewards" },
   ]
+
+  if (transaction.status === "unstaking") {
+    steps = [
+      { name: "Unstaking Initiated", description: "Your unstaking request has been submitted" },
+      { name: "Assets Released", description: "Your assets have been released from staking" },
+    ]
+  }
 
   const currentStep = transaction.currentStep || 0
 
@@ -172,7 +216,7 @@ function BridgeTransactionSteps({ transaction }: { transaction: BridgeTransactio
 }
 
 // Transaction card component
-function TransactionCard({ transaction }: { transaction: BridgeTransaction }) {
+function TransactionCard({ transaction }: { transaction: StakingTransaction }) {
   const [isOpen, setIsOpen] = useState(false)
   const { toast } = useToast()
   const statusBadge = getStatusBadge(transaction.status)
@@ -180,7 +224,7 @@ function TransactionCard({ transaction }: { transaction: BridgeTransaction }) {
   const handleRetry = () => {
     toast({
       title: "Retrying transaction",
-      description: `Retrying bridge transaction for ${transaction.amount} ${transaction.token}`,
+      description: `Retrying staking transaction for ${transaction.amount} ${transaction.token}`,
     })
   }
 
@@ -195,16 +239,15 @@ function TransactionCard({ transaction }: { transaction: BridgeTransaction }) {
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="flex items-center">
-              <span className="text-lg">{transaction.sourceChain.logo}</span>
-              <ArrowRight className="h-4 w-4 mx-1" />
-              <span className="text-lg">{transaction.destinationChain.logo}</span>
+              <span className="text-lg">{transaction.network.logo}</span>
+              <span className="ml-2">{transaction.network.name}</span>
             </div>
             <div>
               <div className="font-medium">
                 {transaction.amount} {transaction.token}
               </div>
               <div className="text-xs text-muted-foreground">
-                {transaction.sourceChain.name} to {transaction.destinationChain.name}
+                APR: {transaction.apr}
               </div>
             </div>
           </div>
@@ -235,11 +278,29 @@ function TransactionCard({ transaction }: { transaction: BridgeTransaction }) {
                 <p className="text-muted-foreground">Timestamp</p>
                 <p>{transaction.timestamp}</p>
               </div>
+              <div>
+                <p className="text-muted-foreground">Stake Duration</p>
+                <p>{transaction.stakeDuration || "N/A"}</p>
+              </div>
+              {transaction.rewards && (
+                <div>
+                  <p className="text-muted-foreground">Rewards</p>
+                  <p>{transaction.rewards}</p>
+                </div>
+              )}
+              {transaction.unlockDate && (
+                <div>
+                  <p className="text-muted-foreground">Unlock Date</p>
+                  <p>{transaction.unlockDate}</p>
+                </div>
+              )}
             </div>
 
-            {transaction.status === "processing" && transaction.currentStep && transaction.totalSteps && (
-              <BridgeTransactionSteps transaction={transaction} />
-            )}
+            {(transaction.status === "processing" || transaction.status === "staking" || transaction.status === "unstaking") &&
+              transaction.currentStep !== undefined &&
+              transaction.totalSteps !== undefined && (
+                <StakingTransactionSteps transaction={transaction} />
+              )}
 
             {transaction.status === "pending" && (
               <div className="flex items-center space-x-2 text-sm text-muted-foreground">
@@ -274,13 +335,15 @@ function TransactionCard({ transaction }: { transaction: BridgeTransaction }) {
   )
 }
 
-export function BridgeTransactionTracker() {
-  const [transactions, setTransactions] = useState<BridgeTransaction[]>(initialTransactions)
+export function StakingTransactionTracker() {
+  const [transactions, setTransactions] = useState<StakingTransaction[]>(initialTransactions)
   const [notificationsEnabled, setNotificationsEnabled] = useState<boolean>(false)
   const { toast } = useToast()
   const { permission, isSupported, sendNotification, setShowPermissionDialog } = useNotification()
 
-  const activeTransactions = transactions.filter((tx) => tx.status === "pending" || tx.status === "processing")
+  const activeTransactions = transactions.filter(
+    (tx) => tx.status === "pending" || tx.status === "processing" || tx.status === "staking" || tx.status === "unstaking"
+  )
   const completedTransactions = transactions.filter((tx) => tx.status === "completed" || tx.status === "failed")
 
   // Effect to simulate transaction status updates
@@ -294,7 +357,10 @@ export function BridgeTransactionTracker() {
 
         // Find a random active transaction to update
         const activeIndices = updatedTransactions
-          .map((tx, index) => (tx.status === "pending" || tx.status === "processing" ? index : -1))
+          .map((tx, index) =>
+            (tx.status === "pending" || tx.status === "processing" ||
+              tx.status === "staking" || tx.status === "unstaking") ? index : -1
+          )
           .filter((index) => index !== -1)
 
         if (activeIndices.length === 0) return currentTransactions
@@ -306,48 +372,69 @@ export function BridgeTransactionTracker() {
         if (transaction.status === "pending") {
           transaction.status = "processing"
           transaction.currentStep = 1
-          transaction.totalSteps = 4
-          transaction.estimatedCompletionTime = "~15 minutes remaining"
+          transaction.totalSteps = 3
+          transaction.estimatedCompletionTime = "~5 minutes remaining"
 
           // Send notification if enabled
           if (notificationsEnabled && permission === "granted") {
-            sendNotification("Transaction Processing", {
-              body: `Your ${transaction.amount} ${transaction.token} transaction from ${transaction.sourceChain.name} is now processing`,
+            sendNotification("Staking Transaction Processing", {
+              body: `Your ${transaction.amount} ${transaction.token} staking transaction is now processing`,
               icon: "/favicon.ico",
             })
           }
 
           toast({
-            title: "Transaction Processing",
-            description: `Your ${transaction.amount} ${transaction.token} transaction from ${transaction.sourceChain.name} is now processing`,
+            title: "Staking Transaction Processing",
+            description: `Your ${transaction.amount} ${transaction.token} staking transaction is now processing`,
           })
         } else if (transaction.status === "processing") {
-          if (transaction.currentStep && transaction.currentStep < 4) {
+          if (transaction.currentStep && transaction.currentStep < 3) {
             transaction.currentStep += 1
 
-            if (transaction.currentStep === 4) {
-              transaction.status = "completed"
+            if (transaction.currentStep === 3) {
+              transaction.status = "staking"
 
               // Send notification if enabled
               if (notificationsEnabled && permission === "granted") {
-                sendNotification("Transaction Completed", {
-                  body: `Your ${transaction.amount} ${transaction.token} has been successfully bridged to Ethereum`,
+                sendNotification("Staking Active", {
+                  body: `Your ${transaction.amount} ${transaction.token} is now staking and earning rewards`,
                   icon: "/favicon.ico",
                 })
               }
 
               toast({
-                title: "Transaction Completed",
-                description: `Your ${transaction.amount} ${transaction.token} has been successfully bridged to Ethereum`,
+                title: "Staking Active",
+                description: `Your ${transaction.amount} ${transaction.token} is now staking and earning rewards`,
               })
             } else {
               // Send notification for step progress if enabled
               if (notificationsEnabled && permission === "granted") {
-                sendNotification("Transaction Update", {
-                  body: `Your bridge transaction is at step ${transaction.currentStep} of ${transaction.totalSteps}`,
+                sendNotification("Staking Update", {
+                  body: `Your staking transaction is at step ${transaction.currentStep} of ${transaction.totalSteps}`,
                   icon: "/favicon.ico",
                 })
               }
+            }
+          }
+        } else if (transaction.status === "unstaking") {
+          if (transaction.currentStep && transaction.currentStep < 2) {
+            transaction.currentStep += 1
+
+            if (transaction.currentStep === 2) {
+              transaction.status = "completed"
+
+              // Send notification if enabled
+              if (notificationsEnabled && permission === "granted") {
+                sendNotification("Unstaking Completed", {
+                  body: `Your ${transaction.amount} ${transaction.token} has been successfully unstaked`,
+                  icon: "/favicon.ico",
+                })
+              }
+
+              toast({
+                title: "Unstaking Completed",
+                description: `Your ${transaction.amount} ${transaction.token} has been successfully unstaked`,
+              })
             }
           }
         }
@@ -384,15 +471,15 @@ export function BridgeTransactionTracker() {
       } else {
         setNotificationsEnabled(true)
         toast({
-          title: "Transaction notifications enabled",
-          description: "You'll receive notifications when your transactions change status",
+          title: "Staking notifications enabled",
+          description: "You'll receive notifications when your staking transactions change status",
         })
       }
     } else {
       setNotificationsEnabled(false)
       toast({
-        title: "Transaction notifications disabled",
-        description: "You won't receive notifications for transaction updates",
+        title: "Staking notifications disabled",
+        description: "You won't receive notifications for staking updates",
       })
     }
   }
@@ -401,8 +488,8 @@ export function BridgeTransactionTracker() {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle>Bridge Transaction Tracker</CardTitle>
-          <CardDescription>Monitor the status of your cross-chain bridge transactions</CardDescription>
+          <CardTitle>Staking Transaction Tracker</CardTitle>
+          <CardDescription>Monitor the status of your staking transactions and rewards</CardDescription>
         </div>
         {isSupported && (
           <div className="flex items-center space-x-2">
@@ -423,14 +510,14 @@ export function BridgeTransactionTracker() {
         <Tabs defaultValue="active" className="space-y-4">
           <TabsList>
             <TabsTrigger value="active">
-              Active Transactions
+              Active Stakes
               {activeTransactions.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
                   {activeTransactions.length}
                 </Badge>
               )}
             </TabsTrigger>
-            <TabsTrigger value="history">Transaction History</TabsTrigger>
+            <TabsTrigger value="history">Staking History</TabsTrigger>
           </TabsList>
 
           <TabsContent value="active" className="space-y-3">
@@ -440,7 +527,7 @@ export function BridgeTransactionTracker() {
               ))
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No active bridge transactions</p>
+                <p>No active staking transactions</p>
               </div>
             )}
           </TabsContent>
@@ -452,7 +539,7 @@ export function BridgeTransactionTracker() {
               ))
             ) : (
               <div className="text-center py-8 text-muted-foreground">
-                <p>No transaction history found</p>
+                <p>No staking history found</p>
               </div>
             )}
           </TabsContent>

@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { TrendingUp, Wallet, ExternalLink, Gift, BarChart3, Loader2 } from "lucide-react"
 import { ConnectKitButton } from "connectkit"
 import { StakingAnalytics } from "@/components/staking-analytics"
-import { BridgeTransactionTracker } from "@/components/bridge-transaction-tracker"
+import { StakingTransactionTracker } from "@/components/bridge-transaction-tracker"
 import { useToast } from "@/hooks/use-toast"
 import {
   Dialog,
@@ -25,6 +25,8 @@ import { Label } from "@/components/ui/label"
 import { TransactionMonitor } from "@/components/transaction-monitor"
 import { useAggregateAllBalance } from "@/hooks/use-aggregate-all-balance"
 import { useStakingAggregatorContract } from "@/hooks/use-stakingAggregator-contract"
+import { useAnyStakeContract } from "@/hooks/use-anyStake-contract"
+import { flowTestnet, hederaTestnet } from "viem/chains"
 
 const transactions = [
   {
@@ -80,6 +82,7 @@ export default function DashboardPage() {
   const { totalBalance, positions, totalChains, isLoading: isBalanceLoading } = useAggregateAllBalance()
   const { totalStakedData } = useStakingAggregatorContract();
 
+  const { withdraw, isPending: isWithdrawPending, isConfirming: isWithdrawConfirming } = useAnyStakeContract();
 
   useEffect(() => {
     const getTotalStaked = async () => {
@@ -106,9 +109,28 @@ export default function DashboardPage() {
       status: "Active",
     },
   ]
+  const postion = [{
+    chainId: flowTestnet.id,
+    amount: "100",
+    token: "ETH",
+    rewards: "10",
+    apy: 12.5,
+    status: "Active",
+    sourceChain: "Flow",
+  }, {
+    chainId: hederaTestnet.id,
+    amount: "100",
+    token: "ETH",
+    rewards: "10",
+    apy: 12.5,
+    status: "Active",
+    sourceChain: "Hedera",
+  }]
 
   const handleUnstake = () => {
     if (!selectedPosition) return
+
+    withdraw(selectedPosition.chainId, BigInt(20));
 
     toast({
       title: "Unstaking Initiated",
@@ -204,7 +226,7 @@ export default function DashboardPage() {
 
         {/* Bridge Transaction Tracker */}
         <div className="mb-8">
-          <BridgeTransactionTracker />
+          <StakingTransactionTracker />
         </div>
 
         <Tabs defaultValue="positions" className="space-y-6">
@@ -266,7 +288,7 @@ export default function DashboardPage() {
                     <div>
                       <h4 className="font-medium mb-3">Chain Positions</h4>
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {positions.map((chainPosition) => (
+                        {postion.map((chainPosition) => (
                           <Card key={chainPosition.chainId} className="overflow-hidden">
                             <CardContent className="p-4">
                               <div className="flex items-center space-x-3 mb-2">
@@ -288,7 +310,7 @@ export default function DashboardPage() {
                                 <Button size="sm" variant="outline" className="flex-1"
                                   onClick={() => {
                                     setSelectedPosition({ position: position, chainId: chainPosition.chainId });
-                                    setDestinationChain(chainPosition.chainName.toLowerCase());
+                                    setDestinationChain(chainPosition.sourceChain.toLowerCase());
                                     setUnstakeDialogOpen(true);
                                   }}>
                                   Unstake

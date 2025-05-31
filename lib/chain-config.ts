@@ -9,12 +9,6 @@ export const CHAIN_CONFIG = {
     rpcUrl: sepolia.rpcUrls.default.http[0],
     explorerUrl: sepolia.blockExplorers.default.url,
   },
-  [baseSepolia.id]: {
-    name: "Base Sepolia",
-    chainId: baseSepolia.id,
-    rpcUrl: baseSepolia.rpcUrls.default.http[0],
-    explorerUrl: baseSepolia.blockExplorers.default.url,
-  },
   [flowTestnet.id]: {
     name: "Flow Testnet",
     chainId: flowTestnet.id,

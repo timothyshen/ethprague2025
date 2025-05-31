@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useAccount, useBalance, useChainId } from "wagmi"
-import { formatEther } from "viem"
+import { formatEther, parseEther } from "viem"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,10 +15,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useChainBalance } from "@/hooks/use-chain-balance"
 import { sepolia, flowTestnet, hederaTestnet } from "viem/chains"
 
-// Add these imports at the top
-import { useStakingContract } from "@/hooks/use-staking-contract"
-import { useContractEvents } from "@/hooks/use-contract-events"
 
+import { useAnyStakeContract } from "@/hooks/use-anyStake-contract"
 import { useStakingAggregatorContract } from "@/hooks/use-stakingAggregator-contract"
 
 interface StakingPool {
@@ -47,31 +45,17 @@ const sourceChains = [
 export function StakingCard({ pool }: StakingCardProps) {
   const [stakeAmount, setStakeAmount] = useState("")
   const [unstakeAmount, setUnstakeAmount] = useState("")
-  const [selectedSourceChain, setSelectedSourceChain] = useState(sourceChains[0].id)
+  const [selectedSourceChain, setSelectedSourceChain] = useState<number>(sourceChains[0].id)
   const [stakeStep, setStakeStep] = useState<"amount" | "source" | "confirm">("amount")
 
   const { address } = useAccount()
-  const chainId = useChainId()
   const { toast } = useToast()
-
-  // Use real contract hooks
-  const {
-    stake,
-    unstake,
-    claimRewards,
-    totalStaked,
-    apy,
-    stakedAmount,
-    pendingRewards,
-    isPending: isStakingPending,
-    isConfirming: isStakingConfirming,
-  } = useStakingContract()
 
 
   const { totalStakedData, stakedAmountData } = useStakingAggregatorContract()
+  const { depositQuoteData, deposit, isPending: isStakingPending, isConfirming: isStakingConfirming, } = useAnyStakeContract()
 
-  // Watch for contract events
-  useContractEvents(address)
+
 
   const { data: balance } = useBalance({
     address,
@@ -81,8 +65,8 @@ export function StakingCard({ pool }: StakingCardProps) {
   // Update pool data with real contract data
   const updatedPool = {
     ...pool,
-    totalStaked: totalStakedData.data ? (Number(totalStakedData.data) / 1e18).toFixed(4) : "5.00",
-    apy: apy,
+    totalStaked: (Number(totalStakedData.data) / 1e18).toFixed(4),
+    apy: 10,
     userStaked: stakedAmountData(address as `0x${string}`).data ? (Number(stakedAmountData(address as `0x${string}`).data) / 1e18).toFixed(4) : "5.00",
   }
 
@@ -102,7 +86,7 @@ export function StakingCard({ pool }: StakingCardProps) {
     setStakeStep("amount")
   }
 
-  const handleSourceSelectionNext = () => {
+  const handleSourceSelectionNext = async () => {
     if (!selectedSourceChain) {
       toast({
         title: "Source Chain Selection Required",
@@ -111,6 +95,7 @@ export function StakingCard({ pool }: StakingCardProps) {
       })
       return
     }
+
     setStakeStep("confirm")
   }
 
@@ -122,10 +107,7 @@ export function StakingCard({ pool }: StakingCardProps) {
     if (!stakeAmount || !address || !selectedSourceChain) return
 
     try {
-      if (chainId === 1) {
-        // Direct staking on Ethereum
-        await stake(stakeAmount)
-      }
+      deposit(selectedSourceChain, parseEther(stakeAmount || "0"))
       setStakeAmount("")
       setStakeStep("amount")
     } catch (error) {
@@ -137,10 +119,25 @@ export function StakingCard({ pool }: StakingCardProps) {
     if (!unstakeAmount || !address) return
 
     try {
-      await unstake(unstakeAmount)
       setUnstakeAmount("")
     } catch (error) {
       console.error("Unstaking error:", error)
+    }
+  }
+
+  const getBridgeFee = (chainId: number, stakeAmount: string) => {
+    try {
+      // const quote = depositQuoteData(chainId, parseEther(stakeAmount || "0"))
+      const quote = { data: { nativeFee: parseEther("0.01") } }
+      if (quote?.data && typeof quote.data === 'object') {
+        // Safely access with type assertion
+        const fee = (quote.data as any).nativeFee
+        return fee ? formatEther(fee) + " ETH" : "Calculating..."
+      }
+      return "Calculating..."
+    } catch (error) {
+      console.error("Error calculating fee:", error)
+      return "Error calculating fee"
     }
   }
 
@@ -256,8 +253,8 @@ export function StakingCard({ pool }: StakingCardProps) {
                   <RadioGroup value={selectedSourceChain} onValueChange={setSelectedSourceChain} className="space-y-3">
                     {sourceChains.map((chain) => (
                       <div key={chain.id} className="flex items-center space-x-2 rounded-md border p-3">
-                        <RadioGroupItem value={chain.id} id={chain.id} />
-                        <Label htmlFor={chain.id} className="flex flex-1 items-center justify-between cursor-pointer">
+                        <RadioGroupItem value={chain.id.toString()} id={chain.id.toString()} />
+                        <Label htmlFor={chain.id.toString()} className="flex flex-1 items-center justify-between cursor-pointer">
                           <div className="flex items-center space-x-2">
                             <span className="text-xl">{chain.logo}</span>
                             <span>{chain.name}</span>
@@ -267,7 +264,7 @@ export function StakingCard({ pool }: StakingCardProps) {
                               </p>
                             )}
                           </div>
-                          <Badge variant="outline">Bridge Fee: {chain.fee}</Badge>
+                          <Badge variant="outline">Bridge Fee: {getBridgeFee(chain.id, stakeAmount)}</Badge>
                         </Label>
                       </div>
                     ))}
@@ -317,7 +314,7 @@ export function StakingCard({ pool }: StakingCardProps) {
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">APY:</span>
-                      <span className="font-medium text-green-600">{updatedPool.apy}%</span>
+                      <span className="font-medium text-green-600">10%</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Lock Period:</span>

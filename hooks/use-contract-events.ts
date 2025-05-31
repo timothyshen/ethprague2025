@@ -1,127 +1,143 @@
-"use client"
+"use client";
 
-import { useWatchContractEvent } from "wagmi"
-import { CONTRACTS, STAKING_POOL_ABI, BRIDGE_SENDER_ABI } from "@/lib/contracts"
-import { useToast } from "@/hooks/use-toast"
-import { useNotification } from "@/components/notification-provider"
-import { useEffect } from "react"
-import { useState, useCallback } from "react"
+import { useWatchContractEvent } from "wagmi";
+import { CONTRACTS_NEW } from "@/lib/contracts";
+import { AnyStakeAbi } from "@/lib/anyStakeabi";
+import { StakingAggregatorAbi } from "@/lib/stakingAggregatorAbi";
+import { useToast } from "@/hooks/use-toast";
+import { useNotification } from "@/components/notification-provider";
+import { useState, useCallback } from "react";
 
 export function useContractEvents(userAddress?: `0x${string}`) {
-  const { toast } = useToast()
-  const { sendNotification } = useNotification()
-  const [bridgeEventsChainIds, setBridgeEventsChainIds] = useState<number[]>([])
+  const { toast } = useToast();
+  const { sendNotification } = useNotification();
+  const [anyStakeEventsChainIds, setAnyStakeEventsChainIds] = useState<
+    number[]
+  >([]);
 
-  const memoizedSendNotification = useCallback(sendNotification, [sendNotification])
-  const memoizedToast = useCallback(toast, [toast])
+  const memoizedSendNotification = useCallback(sendNotification, [
+    sendNotification,
+  ]);
+  const memoizedToast = useCallback(toast, [toast]);
 
-  // Watch staking events
+  // Watch staking events on the aggregator
   useWatchContractEvent({
-    address: CONTRACTS[1].stakingPool as `0x${string}`,
-    abi: STAKING_POOL_ABI,
-    eventName: "Staked",
+    address: CONTRACTS_NEW[11_155_111].stakingAggregator as `0x${string}`,
+    abi: StakingAggregatorAbi,
+    eventName: "Deposited",
     onLogs(logs) {
-      logs.forEach((log) => {
-        if (log.args.user === userAddress) {
-          const amount = log.args.amount ? Number(log.args.amount) / 1e18 : 0
-          memoizedToast({
-            title: "Staking Confirmed",
-            description: `Successfully staked ${amount.toFixed(4)} ETH`,
-          })
-          memoizedSendNotification("Staking Confirmed", {
-            body: `Successfully staked ${amount.toFixed(4)} ETH`,
-          })
-        }
-      })
+      console.log(logs);
     },
-  })
+  });
 
   useWatchContractEvent({
-    address: CONTRACTS[1].stakingPool as `0x${string}`,
-    abi: STAKING_POOL_ABI,
-    eventName: "Unstaked",
+    address: CONTRACTS_NEW[11_155_111].stakingAggregator as `0x${string}`,
+    abi: StakingAggregatorAbi,
+    eventName: "Withdrawn",
     onLogs(logs) {
-      logs.forEach((log) => {
-        if (log.args.user === userAddress) {
-          const amount = log.args.amount ? Number(log.args.amount) / 1e18 : 0
-          memoizedToast({
-            title: "Unstaking Confirmed",
-            description: `Successfully unstaked ${amount.toFixed(4)} ETH`,
-          })
-          memoizedSendNotification("Unstaking Confirmed", {
-            body: `Successfully unstaked ${amount.toFixed(4)} ETH`,
-          })
-        }
-      })
+      console.log(logs);
     },
-  })
+  });
 
   useWatchContractEvent({
-    address: CONTRACTS[1].stakingPool as `0x${string}`,
-    abi: STAKING_POOL_ABI,
-    eventName: "RewardsClaimed",
+    address: CONTRACTS_NEW[11_155_111].stakingAggregator as `0x${string}`,
+    abi: StakingAggregatorAbi,
+    eventName: "ComposedMessageReceived",
     onLogs(logs) {
-      logs.forEach((log) => {
-        if (log.args.user === userAddress) {
-          const amount = log.args.amount ? Number(log.args.amount) / 1e18 : 0
-          memoizedToast({
-            title: "Rewards Claimed",
-            description: `Successfully claimed ${amount.toFixed(4)} ETH in rewards`,
-          })
-          memoizedSendNotification("Rewards Claimed", {
-            body: `Successfully claimed ${amount.toFixed(4)} ETH in rewards`,
-          })
-        }
-      })
+      console.log(logs);
     },
-  })
+  });
 
-  // Watch bridge events on different chains
-  const watchBridgeEventsForChain = useCallback(
-    (chainId: number) => {
-      const contractAddress = CONTRACTS[chainId as keyof typeof CONTRACTS]?.bridgeSender
-
-      if (contractAddress) {
-        useWatchContractEvent({
-          address: contractAddress as `0x${string}`,
-          abi: BRIDGE_SENDER_ABI,
-          eventName: "BridgeInitiated",
-          onLogs(logs) {
-            logs.forEach((log) => {
-              if (log.args.sender === userAddress) {
-                const amount = log.args.amount ? Number(log.args.amount) / 1e18 : 0
-                memoizedToast({
-                  title: "Bridge Initiated",
-                  description: `Bridge transaction started for ${amount.toFixed(4)} ETH`,
-                })
-                memoizedSendNotification("Bridge Initiated", {
-                  body: `Bridge transaction started for ${amount.toFixed(4)} ETH`,
-                })
-              }
-            })
-          },
-        })
-      }
+  useWatchContractEvent({
+    address: CONTRACTS_NEW[11_155_111].stakingAggregator as `0x${string}`,
+    abi: StakingAggregatorAbi,
+    eventName: "ConfirmationSent",
+    onLogs(logs) {
+      console.log(logs);
     },
-    [userAddress, memoizedSendNotification, memoizedToast],
-  )
+  });
 
-  const watchBridgeEvents = (chainId: number) => {
-    setBridgeEventsChainIds((prev) => {
+  // For Ethereum Sepolia
+  const sepoliaEnabled = anyStakeEventsChainIds.includes(11_155_111);
+  const sepoliaAddress = CONTRACTS_NEW[11_155_111]?.anyStake as `0x${string}`;
+
+  useWatchContractEvent({
+    address: sepoliaAddress,
+    abi: AnyStakeAbi,
+    eventName: "Deposited",
+    onLogs(logs) {
+      console.log(logs);
+    },
+    enabled: sepoliaEnabled,
+  });
+
+  useWatchContractEvent({
+    address: sepoliaAddress,
+    abi: AnyStakeAbi,
+    eventName: "WithdrawalInitiated",
+    onLogs(logs) {
+      console.log(logs);
+    },
+    enabled: sepoliaEnabled,
+  });
+
+  useWatchContractEvent({
+    address: sepoliaAddress,
+    abi: AnyStakeAbi,
+    eventName: "WithdrawalConfirmed",
+    onLogs(logs) {
+      console.log(logs);
+    },
+    enabled: sepoliaEnabled,
+  });
+
+  useWatchContractEvent({
+    address: sepoliaAddress,
+    abi: AnyStakeAbi,
+    eventName: "Withdrawn",
+    onLogs(logs) {
+      console.log(logs);
+    },
+    enabled: sepoliaEnabled,
+  });
+
+  useWatchContractEvent({
+    address: sepoliaAddress,
+    abi: AnyStakeAbi,
+    eventName: "ComposedMessageSent",
+    onLogs(logs) {
+      console.log(logs);
+    },
+    enabled: sepoliaEnabled,
+  });
+
+  // Add additional chains here with similar pattern
+  // For example, Base Sepolia
+  const baseEnabled = anyStakeEventsChainIds.includes(84532);
+  const baseAddress = CONTRACTS_NEW[84532]?.anyStake as `0x${string}`;
+
+  useWatchContractEvent({
+    address: baseAddress,
+    abi: AnyStakeAbi,
+    eventName: "Deposited",
+    onLogs(logs) {
+      console.log(logs);
+    },
+    enabled: baseEnabled,
+  });
+
+  // Add other event watchers for Base chain...
+
+  const watchAnyStakeEvents = useCallback((chainId: number) => {
+    setAnyStakeEventsChainIds((prev) => {
       if (!prev.includes(chainId)) {
-        return [...prev, chainId]
+        return [...prev, chainId];
       }
-      return prev
-    })
-  }
-
-  useEffect(() => {
-    bridgeEventsChainIds.forEach((chainId) => {
-      watchBridgeEventsForChain(chainId)
-    })
-  }, [bridgeEventsChainIds, watchBridgeEventsForChain])
+      return prev;
+    });
+  }, []);
 
   return {
-    watchBridgeEvents,
-  }
+    watchAnyStakeEvents,
+  };
 }

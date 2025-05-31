@@ -3,23 +3,18 @@ import { ExecutorOptionType } from '@layerzerolabs/lz-v2-utilities'
 import { TwoWayConfig, generateConnectionsConfig } from '@layerzerolabs/metadata-tools'
 import { OAppEnforcedOption, OmniPointHardhat } from '@layerzerolabs/toolbox-hardhat'
 
-const arbitrumContract: OmniPointHardhat = {
-    eid: EndpointId.ARBSEP_V2_TESTNET,
-    contractName: 'AnyStake',
-}
-
 const ethereumSepoliaContract: OmniPointHardhat = {
-    eid: EndpointId.ETHEREUM_V2_TESTNET,
+    eid: EndpointId.SEPOLIA_V2_TESTNET,
     contractName: 'AnyStake',
 }
 
 const flowTestnetContract: OmniPointHardhat = {
-    eid: EndpointId.FLOW_TESTNET,
+    eid: EndpointId.FLOW_V2_TESTNET,
     contractName: 'AnyStake',
 }
 
 const hederaTestnetContract: OmniPointHardhat = {
-    eid: EndpointId.HEDERA_TESTNET,
+    eid: EndpointId.HEDERA_V2_TESTNET,
     contractName: 'AnyStake',
 }
 
@@ -36,9 +31,8 @@ const EVM_ENFORCED_OPTIONS: OAppEnforcedOption[] = [
 ]
 
 // To connect all the above chains to each other, we need the following pathways:
-// Optimism <-> Avalanche
-// Optimism <-> Arbitrum
-// Avalanche <-> Arbitrum
+// Ethereum Sepolia <-> Flow Testnet
+// Ethereum Sepolia <-> Hedera Testnet
 
 // With the config generator, pathways declared are automatically bidirectional
 // i.e. if you declare A,B there's no need to declare B,A
@@ -56,13 +50,6 @@ const pathways: TwoWayConfig[] = [
         [['LayerZero Labs'], []], // [ requiredDVN[], [ optionalDVN[], threshold ] ]
         [1, 1], // [A to B confirmations, B to A confirmations]
         [EVM_ENFORCED_OPTIONS, EVM_ENFORCED_OPTIONS], // Chain C enforcedOptions, Chain A enforcedOptions
-    ],
-    [
-        flowTestnetContract, // Chain B contract
-        hederaTestnetContract, // Chain C contract
-        [['LayerZero Labs'], []], // [ requiredDVN[], [ optionalDVN[], threshold ] ]
-        [1, 1], // [A to B confirmations, B to A confirmations]
-        [EVM_ENFORCED_OPTIONS, EVM_ENFORCED_OPTIONS], // Chain C enforcedOptions, Chain B enforcedOptions
     ],
 ]
 

@@ -1,23 +1,22 @@
-import { flowTestnet, hederaTestnet, sepolia, baseSepolia } from "viem/chains";
+import { flowTestnet, hederaTestnet, sepolia } from "viem/chains";
 
 // Contract addresses for different networks
 export const CONTRACTS_NEW = {
   // Ethereum Mainnet
   [sepolia.id]: {
-    stakingAggregator: "0x1234567890123456789012345678901234567890",
-    anyStake: "0x2345678901234567890123456789012345678901",
-  },
-  [baseSepolia.id]: {
-    stakingAggregator: "0x1234567890123456789012345678901234567890",
-    anyStake: "0x2345678901234567890123456789012345678901",
+    endpointId: 40161,
+    stakeAggregator: "0xE53820Cf65947EEF446c628C3600EFfb460Ddc0F",
+    anyStake: "0x3f4CBb37f03F7af7eB0D1C6989E4f077718B73C3",
   },
   [flowTestnet.id]: {
-    stakingAggregator: "0x1234567890123456789012345678901234567890",
-    anyStake: "0x2345678901234567890123456789012345678901",
+    endpointId: 40351,
+    stakeAggregator: "0xF3682fcb801aD48D0088aA7EC3641F15171696e3",
+    anyStake: "0xE3BE4A81718390e4571B4415f27E0c3EEa09E701",
   },
   [hederaTestnet.id]: {
-    stakingAggregator: "0x1234567890123456789012345678901234567890",
-    anyStake: "0x2345678901234567890123456789012345678901",
+    endpointId: 40285,
+    stakeAggregator: "0x9C5Ad9F21165a9A6aFA588C24Ed7292902987CbE",
+    anyStake: "0xA557E5eD0f4004085379f1b6ea93B340a474a883",
   },
 } as const;
 

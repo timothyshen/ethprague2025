@@ -1,14 +1,9 @@
 "use client";
 
 import { useWatchContractEvent } from "wagmi";
-import {
-  CONTRACTS_NEW,
-  CONTRACTS,
-  STAKING_POOL_ABI,
-  BRIDGE_SENDER_ABI,
-} from "@/lib/contracts";
-import { AnyStakeAbi } from "@/lib/anyStakeabi";
-import { StakingAggregatorAbi } from "@/lib/stakingAggregator";
+import { CONTRACTS_NEW } from "@/lib/contracts";
+import { AnyStakeAbi } from "@/lib/anyStakeAbi";
+import { StakingAggregatorAbi } from "@/lib/stakingAggregatorAbi";
 import { useToast } from "@/hooks/use-toast";
 import { useNotification } from "@/components/notification-provider";
 import { useEffect, useState, useCallback } from "react";

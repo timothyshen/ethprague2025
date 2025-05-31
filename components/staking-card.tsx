@@ -12,6 +12,8 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, TrendingUp, Lock, Unlock, ArrowRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { useChainBalance } from "@/hooks/use-chain-balance"
+import { sepolia, flowTestnet, hederaTestnet } from "viem/chains"
 
 // Add these imports at the top
 import { useStakingContract } from "@/hooks/use-staking-contract"
@@ -34,9 +36,9 @@ interface StakingCardProps {
 
 // Define supported source chains for cross-chain staking
 const sourceChains = [
-  { id: "ethereum", name: "Ethereum", logo: "🔷", fee: "0.001 ETH" },
-  { id: "flow", name: "Flow", logo: "🌊", fee: "0.002 ETH" },
-  { id: "hedera", name: "Hedera", logo: "♦️", fee: "0.0015 ETH" },
+  { id: sepolia.id, name: "Ethereum", logo: "🔷", fee: "0.001 ETH" },
+  { id: flowTestnet.id, name: "Flow", logo: "🌊", fee: "0.002 ETH" },
+  { id: hederaTestnet.id, name: "Hedera", logo: "♦️", fee: "0.0015 ETH" },
 ]
 
 // Update the StakingCard component to use real contract data
@@ -70,6 +72,7 @@ export function StakingCard({ pool }: StakingCardProps) {
     address,
   })
 
+  const balances = useChainBalance();
   // Update pool data with real contract data
   const updatedPool = {
     ...pool,
@@ -253,20 +256,10 @@ export function StakingCard({ pool }: StakingCardProps) {
                           <div className="flex items-center space-x-2">
                             <span className="text-xl">{chain.logo}</span>
                             <span>{chain.name}</span>
-                            {chain.id === selectedSourceChain && (
-                              <div className="ml-2 text-xs text-muted-foreground">
-                                {chain.id === "ethereum" ? (
-                                  <span>
-                                    {balance ? `Balance: ${formatEther(balance.value)} ${balance.symbol}` : "Loading balance..."}
-                                  </span>
-                                ) : chain.id === "flow" ? (
-                                  <span>Flow balance will be retrieved when connected</span>
-                                ) : chain.id === "hedera" ? (
-                                  <span>Hedera balance will be retrieved when connected</span>
-                                ) : (
-                                  <span>Balance will be fetched when connected</span>
-                                )}
-                              </div>
+                            {balances[chain.id] && (
+                              <p className="text-sm text-muted-foreground">
+                                Balance: {formatEther(balances[chain.id].value)} {balances[chain.id].symbol}
+                              </p>
                             )}
                           </div>
                           <Badge variant="outline">Bridge Fee: {chain.fee}</Badge>

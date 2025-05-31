@@ -1,5 +1,8 @@
 "use client"
 
+// TESTING: Uncomment the line below and comment out the real import to use mock data
+import { useAggregateAllBalanceMock } from "@/hooks/use-aggregate-all-balance-mock"
+// import { useAggregateAllBalance } from "@/hooks/use-aggregate-all-balance"
 import { useAccount, useChainId } from "wagmi"
 import { Navbar } from "@/components/navbar"
 import { ChainSelector } from "@/components/chain-selector"
@@ -9,7 +12,7 @@ import { Button } from "@/components/ui/button"
 import { ConnectKitButton } from "connectkit"
 import { TrendingUp, Users, DollarSign, Zap } from "lucide-react"
 import { useStakingContract } from "@/hooks/use-staking-contract"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Footer from "@/components/footer"
 
 export default function HomePage() {
@@ -22,6 +25,13 @@ export default function HomePage() {
   })
 
   const { totalStaked, apy, stakedAmount, pendingRewards } = useStakingContract()
+  const {
+    totalBalance,
+    positions,
+    chainsWithBalance,
+    totalChains,
+    isLoading: isBalanceLoading
+  } = useAggregateAllBalanceMock()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -31,19 +41,23 @@ export default function HomePage() {
     fetchData()
   }, [totalStaked, apy, stakedAmount, pendingRewards])
 
-  // Update the stakingPools to use real data:
-  const stakingPools = [
-    {
-      id: "1",
-      name: "ETH Staking Pool",
-      token: "ETH",
-      apy: stakingData.apy || 12.5,
-      totalStaked: stakingData.totalStaked || "0.00",
-      userStaked: stakingData.stakedAmount || "0.00",
-      lockPeriod: 30,
-      minStake: "0.01",
-    },
-  ]
+  // Create dynamic staking pools based on user positions and supported chains
+  const stakingPools = useMemo(() => {
+    const pools = [
+      {
+        id: "eth-mainnet",
+        name: "ETH Staking Pool",
+        token: "ETH",
+        apy: stakingData.apy || 12.5,
+        totalStaked: stakingData.totalStaked || "0.00",
+        userStaked: stakingData.stakedAmount || "0.00",
+        lockPeriod: 30,
+        minStake: "0.01",
+      },
+    ];
+
+    return pools;
+  }, [stakingData, positions]);
 
   // Helper function to get dynamic grid classes based on pool count
   const getGridClasses = (poolCount: number): string => {
@@ -64,15 +78,15 @@ export default function HomePage() {
   const stats = [
     {
       title: "Total Value Locked",
-      value: "$12.5M",
+      value: isBalanceLoading ? "Loading..." : `$${(parseFloat(totalBalance) * 1700).toFixed(2)}K`, // ETH price approximation
       icon: DollarSign,
       change: "+12.3%",
     },
     {
-      title: "Active Stakers",
-      value: "2,847",
+      title: "Active Positions",
+      value: chainsWithBalance.toString(),
       icon: Users,
-      change: "+5.2%",
+      change: `${totalChains} chains`,
     },
     {
       title: "Average APY",
@@ -81,10 +95,10 @@ export default function HomePage() {
       change: "+0.8%",
     },
     {
-      title: "Supported Chains",
-      value: "3",
+      title: "Cross-Chain Balance",
+      value: isBalanceLoading ? "Loading..." : `${parseFloat(totalBalance).toFixed(4)} ETH`,
       icon: Zap,
-      change: "New!",
+      change: "Aggregated",
     },
   ]
 

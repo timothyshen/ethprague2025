@@ -20,43 +20,49 @@ export function useAnyStakeContract() {
       hash,
     });
 
-  const lockedBalancesData = (address: `0x${string}`) =>
+  const lockedBalancesData = (chainId: number, address: `0x${string}`) =>
     useReadContract({
-      address: CONTRACTS_NEW[11_155_111].anyStake as `0x${string}`,
+      address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
+        .anyStake as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "lockedBalances",
       args: [address],
     });
 
-  const pendingWithdrawalData = (guid: "bytes32") =>
+  const pendingWithdrawalData = (chainId: number, guid: "bytes32") =>
     useReadContract({
-      address: CONTRACTS_NEW[11_155_111].anyStake as `0x${string}`,
+      address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
+        .anyStake as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "getPendingWithdrawal",
       args: [guid],
     });
 
   const depositQuoteData = (
+    chainId: number,
     _dstEid: number,
     _amount: bigint,
     _composedAddress: `0x${string}`,
     _options: "bytes"
   ) =>
     useReadContract({
-      address: CONTRACTS_NEW[11_155_111].anyStake as `0x${string}`,
+      address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
+        .anyStake as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "getDepositQuote",
       args: [_dstEid, _amount, _composedAddress],
     });
 
   const withdrawQuoteData = (
+    chainId: number,
     _dstEid: number,
     _amount: bigint,
     _composedAddress: `0x${string}`,
     _options: "bytes"
   ) =>
     useReadContract({
-      address: CONTRACTS_NEW[11_155_111].anyStake as `0x${string}`,
+      address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
+        .anyStake as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "getWithdrawQuote",
       args: [_dstEid, _amount, _composedAddress],

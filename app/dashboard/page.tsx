@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useAccount } from "wagmi"
 import { Navbar } from "@/components/navbar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -291,6 +291,9 @@ export default function DashboardPage() {
                       </div>
                     </div>
 
+
+                  </CardContent>
+                  <CardFooter>
                     <div className="flex items-center justify-end">
                       <div className="flex space-x-2">
                         <Button size="sm" variant="outline">
@@ -310,7 +313,7 @@ export default function DashboardPage() {
                         </Button>
                       </div>
                     </div>
-                  </CardContent>
+                  </CardFooter>
                 </Card>
               ))}
             </div>

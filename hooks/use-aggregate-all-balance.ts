@@ -2,10 +2,7 @@ import { sepolia, flowTestnet, hederaTestnet } from "viem/chains";
 import { useAnyStakeContract } from "./use-anyStake-contract";
 import { useAccount } from "wagmi";
 import { useMemo, useState, useEffect } from "react";
-import { formatEther, parseEther } from "viem";
-
-// Toggle this for testing with mock data
-const USE_MOCK_DATA = true;
+import { formatEther } from "viem";
 
 // Supported chains for cross-chain staking
 const SUPPORTED_CHAINS = [
@@ -34,61 +31,11 @@ export interface AggregatedBalance {
   chainsWithBalance: number;
 }
 
-// Mock data for testing
-const MOCK_POSITIONS: UserPosition[] = [
-  {
-    chainId: sepolia.id,
-    chainName: "Sepolia",
-    chainSymbol: "🔷",
-    balance: "2.5",
-    balanceRaw: parseEther("2.5"),
-    isLoading: false,
-    error: null,
-  },
-  {
-    chainId: flowTestnet.id,
-    chainName: "Flow Testnet",
-    chainSymbol: "🌊",
-    balance: "1.75",
-    balanceRaw: parseEther("1.75"),
-    isLoading: false,
-    error: null,
-  },
-  {
-    chainId: hederaTestnet.id,
-    chainName: "Hedera Testnet",
-    chainSymbol: "♦️",
-    balance: "0.8",
-    balanceRaw: parseEther("0.8"),
-    isLoading: false,
-    error: null,
-  },
-];
-
 export function useAggregateAllBalance(): AggregatedBalance {
   const { address } = useAccount();
   const { lockedBalancesData } = useAnyStakeContract();
   const [positions, setPositions] = useState<UserPosition[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-
-  // Return mock data if enabled
-  if (USE_MOCK_DATA && address) {
-    const totalBalanceRaw = MOCK_POSITIONS.reduce(
-      (sum, position) => sum + position.balanceRaw,
-      BigInt(0)
-    );
-
-    return {
-      totalBalance: formatEther(totalBalanceRaw),
-      totalBalanceRaw,
-      positions: MOCK_POSITIONS,
-      isLoading: false,
-      hasError: false,
-      totalChains: SUPPORTED_CHAINS.length,
-      chainsWithBalance: MOCK_POSITIONS.filter((p) => p.balanceRaw > BigInt(0))
-        .length,
-    };
-  }
 
   // Initialize positions for all supported chains
   useEffect(() => {

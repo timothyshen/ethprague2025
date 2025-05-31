@@ -24,49 +24,8 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { useStakingContract } from "@/hooks/use-staking-contract"
 import { TransactionMonitor } from "@/components/transaction-monitor"
+import { useAggregateAllBalanceMock } from "@/hooks/use-aggregate-all-balance-mock"
 
-// Mock data for user's staking positions
-// const stakingPositions = [
-//   {
-//     id: "1",
-//     pool: "ETH Staking Pool",
-//     sourceChain: "Ethereum",
-//     chainLogo: "🔷",
-//     amount: "1.5",
-//     token: "ETH",
-//     value: "$2,550.00",
-//     apy: 12.5,
-//     rewards: "0.075",
-//     lockEnd: "2024-02-15",
-//     status: "Active",
-//   },
-//   {
-//     id: "2",
-//     pool: "ETH Staking Pool",
-//     sourceChain: "Flow",
-//     chainLogo: "🌊",
-//     amount: "0.5",
-//     token: "ETH",
-//     value: "$850.00",
-//     apy: 12.5,
-//     rewards: "0.025",
-//     lockEnd: "2024-03-10",
-//     status: "Active",
-//   },
-//   {
-//     id: "3",
-//     pool: "ETH Staking Pool",
-//     sourceChain: "Hedera",
-//     chainLogo: "♦️",
-//     amount: "0.5",
-//     token: "ETH",
-//     value: "$850.00",
-//     apy: 12.5,
-//     rewards: "0.025",
-//     lockEnd: "2024-03-15",
-//     status: "Active",
-//   },
-// ]
 
 const transactions = [
   {
@@ -114,11 +73,12 @@ const transactions = [
 export default function DashboardPage() {
   const { isConnected, address } = useAccount()
   const [unstakeDialogOpen, setUnstakeDialogOpen] = useState(false)
-  const [selectedPosition, setSelectedPosition] = useState<(typeof stakingPositions)[0] | null>(null)
+  const [selectedPosition, setSelectedPosition] = useState<{ position: (typeof stakingPositions)[0], chainId: number } | null>(null)
   const [destinationChain, setDestinationChain] = useState("ethereum")
   const { toast } = useToast()
 
   const { totalStaked, apy, stakedAmount, pendingRewards, claimRewards, isPending } = useStakingContract()
+  const { totalBalance, positions, totalChains, isLoading: isBalanceLoading } = useAggregateAllBalanceMock()
 
   const stakingPositions = [
     {
@@ -126,9 +86,9 @@ export default function DashboardPage() {
       pool: "ETH Staking Pool",
       sourceChain: "Ethereum",
       chainLogo: "🔷",
-      amount: stakedAmount || "0.00",
+      amount: totalBalance || "0.00",
       token: "ETH",
-      value: `$${(Number.parseFloat(stakedAmount || "0") * 1700).toFixed(2)}`,
+      value: `$${(Number.parseFloat(totalBalance || "0") * 1700).toFixed(2)}`,
       apy: apy || 12.5,
       rewards: pendingRewards || "0.00",
       lockEnd: "2024-02-15",
@@ -141,7 +101,7 @@ export default function DashboardPage() {
 
     toast({
       title: "Unstaking Initiated",
-      description: `Unstaking ${selectedPosition.amount} ${selectedPosition.token} to ${destinationChain}`,
+      description: `Unstaking ${selectedPosition.position.amount} ${selectedPosition.position.token} to ${destinationChain}`,
     })
 
     setUnstakeDialogOpen(false)
@@ -191,7 +151,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Total Staked Value</p>
-                  <p className="text-2xl font-bold">${totalValue.toLocaleString()}</p>
+                  <p className="text-2xl font-bold">${(Number(totalBalance) * 1700).toFixed(2)}</p>
                   <p className="text-sm text-green-600">+5.2% this month</p>
                 </div>
                 <Wallet className="h-8 w-8 text-primary" />
@@ -286,34 +246,49 @@ export default function DashboardPage() {
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm text-muted-foreground">Lock Ends</p>
-                        <p className="font-medium">{position.lockEnd}</p>
+                        <p className="text-sm text-muted-foreground">Total Chains</p>
+                        <p className="font-medium">
+                          {totalChains}
+                        </p>
                       </div>
                     </div>
-
-
+                    <div>
+                      <h4 className="font-medium mb-3">Chain Positions</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {positions.map((chainPosition) => (
+                          <Card key={chainPosition.chainId} className="overflow-hidden">
+                            <CardContent className="p-4">
+                              <div className="flex items-center space-x-3 mb-2">
+                                <div className="flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-primary/10">
+                                  {chainPosition.chainName === "Ethereum" ? "🔷" :
+                                    chainPosition.chainName === "Flow" ? "🌊" :
+                                      chainPosition.chainName === "Hedera" ? "♦️" : "🔗"}
+                                </div>
+                                <div>
+                                  <p className="font-medium">{chainPosition.chainName}</p>
+                                  <p className="text-sm font-bold">{chainPosition.balance} ETH</p>
+                                </div>
+                              </div>
+                              <div className="flex space-x-2 mt-3">
+                                <Button size="sm" variant="outline" className="flex-1">
+                                  <TrendingUp className="mr-1 h-3 w-3" />
+                                  Stake
+                                </Button>
+                                <Button size="sm" variant="outline" className="flex-1"
+                                  onClick={() => {
+                                    setSelectedPosition({ position: position, chainId: chainPosition.chainId });
+                                    setDestinationChain(chainPosition.chainName.toLowerCase());
+                                    setUnstakeDialogOpen(true);
+                                  }}>
+                                  Unstake
+                                </Button>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        ))}
+                      </div>
+                    </div>
                   </CardContent>
-                  <CardFooter>
-                    <div className="flex items-center justify-end">
-                      <div className="flex space-x-2">
-                        <Button size="sm" variant="outline">
-                          <TrendingUp className="mr-2 h-4 w-4" />
-                          Add More
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => {
-                            setSelectedPosition(position)
-                            setDestinationChain("ethereum")
-                            setUnstakeDialogOpen(true)
-                          }}
-                        >
-                          Unstake
-                        </Button>
-                      </div>
-                    </div>
-                  </CardFooter>
                 </Card>
               ))}
             </div>
@@ -368,45 +343,51 @@ export default function DashboardPage() {
           {selectedPosition && (
             <div className="space-y-4 py-2">
               <div className="flex items-center space-x-2 p-2 border rounded-md">
-                <span className="text-lg">{selectedPosition.chainLogo}</span>
+                <span className="text-lg">{selectedPosition.position.chainLogo}</span>
                 <div>
                   <p className="font-medium">
-                    {selectedPosition.amount} {selectedPosition.token}
+                    {selectedPosition.position.amount} {selectedPosition.position.token}
                   </p>
                   <p className="text-sm text-muted-foreground">Source: {selectedPosition.sourceChain}</p>
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>Select Destination Chain</Label>
+                <Label>Confirm Unstake</Label>
                 <RadioGroup value={destinationChain} onValueChange={setDestinationChain} className="space-y-3">
-                  <div className="flex items-center space-x-2 rounded-md border p-3">
-                    <RadioGroupItem value="ethereum" id="ethereum" />
-                    <Label htmlFor="ethereum" className="flex flex-1 items-center justify-between cursor-pointer">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xl">🔷</span>
-                        <span>Ethereum</span>
-                      </div>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2 rounded-md border p-3">
-                    <RadioGroupItem value="flow" id="flow" />
-                    <Label htmlFor="flow" className="flex flex-1 items-center justify-between cursor-pointer">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xl">🌊</span>
-                        <span>Flow</span>
-                      </div>
-                    </Label>
-                  </div>
-                  <div className="flex items-center space-x-2 rounded-md border p-3">
-                    <RadioGroupItem value="hedera" id="hedera" />
-                    <Label htmlFor="hedera" className="flex flex-1 items-center justify-between cursor-pointer">
-                      <div className="flex items-center space-x-2">
-                        <span className="text-xl">♦️</span>
-                        <span>Hedera</span>
-                      </div>
-                    </Label>
-                  </div>
+                  {selectedPosition.chainId === 11_155_111 && (
+                    <div className="flex items-center space-x-2 rounded-md border p-3">
+                      <RadioGroupItem value="ethereum" id="ethereum" />
+                      <Label htmlFor="ethereum" className="flex flex-1 items-center justify-between cursor-pointer">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xl">🔷</span>
+                          <span>Ethereum</span>
+                        </div>
+                      </Label>
+                    </div>
+                  )}
+                  {selectedPosition.chainId === 545 && (
+                    <div className="flex items-center space-x-2 rounded-md border p-3">
+                      <RadioGroupItem value="flow" id="flow" />
+                      <Label htmlFor="flow" className="flex flex-1 items-center justify-between cursor-pointer">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xl">🌊</span>
+                          <span>Flow</span>
+                        </div>
+                      </Label>
+                    </div>
+                  )}
+                  {selectedPosition.chainId === 296 && (
+                    <div className="flex items-center space-x-2 rounded-md border p-3">
+                      <RadioGroupItem value="hedera" id="hedera" />
+                      <Label htmlFor="hedera" className="flex flex-1 items-center justify-between cursor-pointer">
+                        <div className="flex items-center space-x-2">
+                          <span className="text-xl">♦️</span>
+                          <span>Hedera</span>
+                        </div>
+                      </Label>
+                    </div>
+                  )}
                 </RadioGroup>
               </div>
             </div>

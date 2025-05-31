@@ -3,7 +3,7 @@
 import { useState } from "react"
 import { useAccount } from "wagmi"
 import { Navbar } from "@/components/navbar"
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/dialog"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
-import { useStakingContract } from "@/hooks/use-staking-contract"
 import { TransactionMonitor } from "@/components/transaction-monitor"
 import { useAggregateAllBalanceMock } from "@/hooks/use-aggregate-all-balance-mock"
 
@@ -71,13 +70,13 @@ const transactions = [
 ]
 
 export default function DashboardPage() {
-  const { isConnected, address } = useAccount()
+  const { isConnected } = useAccount()
   const [unstakeDialogOpen, setUnstakeDialogOpen] = useState(false)
   const [selectedPosition, setSelectedPosition] = useState<{ position: (typeof stakingPositions)[0], chainId: number } | null>(null)
   const [destinationChain, setDestinationChain] = useState("ethereum")
   const { toast } = useToast()
 
-  const { totalStaked, apy, stakedAmount, pendingRewards, claimRewards, isPending } = useStakingContract()
+  const isPending = false
   const { totalBalance, positions, totalChains, isLoading: isBalanceLoading } = useAggregateAllBalanceMock()
 
   const stakingPositions = [
@@ -89,8 +88,8 @@ export default function DashboardPage() {
       amount: totalBalance || "0.00",
       token: "ETH",
       value: `$${(Number.parseFloat(totalBalance || "0") * 1700).toFixed(2)}`,
-      apy: apy || 12.5,
-      rewards: pendingRewards || "0.00",
+      apy: 12.5,
+      rewards: "10.00",
       lockEnd: "2024-02-15",
       status: "Active",
     },
@@ -206,7 +205,7 @@ export default function DashboardPage() {
           <TabsContent value="positions" className="space-y-6">
             <div className="flex items-center justify-between">
               <h2 className="text-xl font-semibold">Your Staking Positions</h2>
-              <Button onClick={claimRewards} disabled={isPending}>
+              <Button disabled={isPending}>
                 <Gift className="mr-2 h-4 w-4" />
                 {isPending ? "Claiming..." : "Claim All Rewards"}
               </Button>

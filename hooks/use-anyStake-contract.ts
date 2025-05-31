@@ -6,8 +6,10 @@ import {
   useWaitForTransactionReceipt,
 } from "wagmi";
 import { CONTRACTS_NEW } from "@/lib/contracts";
-import { AnyStakeAbi } from "@/lib/anyStakeAbi";
+import { AnyStakeAbi } from "@/lib/anyStakeabi";
 import { useToast } from "@/hooks/use-toast";
+import { ExecutorOptionType, Options } from "@layerzerolabs/lz-v2-utilities";
+import { parseEther } from "viem";
 
 export function useAnyStakeContract() {
   const { toast } = useToast();
@@ -16,6 +18,11 @@ export function useAnyStakeContract() {
     useWaitForTransactionReceipt({
       hash,
     });
+
+  const options = Options.newOptions()
+    .addExecutorLzReceiveOption(200000, 0)
+    .toHex()
+    .toString();
 
   const lockedBalancesData = (chainId: number, address: `0x${string}`) => {
     return useReadContract({
@@ -27,44 +34,47 @@ export function useAnyStakeContract() {
     });
   };
 
-  const pendingWithdrawalData = (chainId: number, guid: "bytes32") =>
-    useReadContract({
+  const pendingWithdrawalData = (chainId: number, guid: `0x${string}`) => {
+    return useReadContract({
       address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
         .anyStake as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "getPendingWithdrawal",
       args: [guid],
     });
+  };
 
-  const depositQuoteData = (
-    chainId: number,
-    _dstEid: number,
-    _amount: bigint,
-    _composedAddress: `0x${string}`,
-    _options: `0x${string}`
-  ) =>
-    useReadContract({
-      address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
-        .anyStake as `0x${string}`,
+  const depositQuoteData = (chainId: number, _amount: bigint) => {
+    const dstEid =
+      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW].endpointId;
+    const contractAddress =
+      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
+    const composedAddress =
+      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.stakeAggregator;
+    const quote = useReadContract({
+      address: contractAddress as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "getDepositQuote",
-      args: [_dstEid, _amount, _composedAddress],
+      args: [dstEid, _amount, composedAddress, options],
     });
+    return quote;
+  };
 
-  const withdrawQuoteData = (
-    chainId: number,
-    _dstEid: number,
-    _amount: bigint,
-    _composedAddress: `0x${string}`,
-    _options: `0x${string}`
-  ) =>
-    useReadContract({
-      address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
-        .anyStake as `0x${string}`,
+  const withdrawQuoteData = (chainId: number, _amount: bigint) => {
+    const dstEid =
+      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW].endpointId;
+    const contractAddress =
+      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
+    const composedAddress =
+      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.stakeAggregator;
+    const quote = useReadContract({
+      address: contractAddress as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "getWithdrawQuote",
-      args: [_dstEid, _amount, _composedAddress],
+      args: [dstEid, _amount, composedAddress, options],
     });
+    return quote;
+  };
 
   const typeEnum = {
     DEPOSIT: 1,
@@ -73,16 +83,14 @@ export function useAnyStakeContract() {
     WITHDRAW_FAILED: 4,
   };
 
-  const deposit = (
-    chainId: number,
-    _dstEid: number,
-    _amount: bigint,
-    _composedAddress: `0x${string}`,
-    _options: `0x${string}`
-  ) => {
+  const deposit = (chainId: number, _amount: bigint) => {
     try {
+      const dstEid =
+        CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW].endpointId;
       const contractAddress =
         CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
+      const composedAddress =
+        CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.stakeAggregator;
 
       if (!contractAddress) {
         throw new Error(`Contract address not found for chain ID: ${chainId}`);
@@ -91,7 +99,8 @@ export function useAnyStakeContract() {
         address: contractAddress as `0x${string}`,
         abi: AnyStakeAbi,
         functionName: "deposit",
-        args: [_dstEid, _amount, _composedAddress, _options],
+        value: _amount + parseEther("0.01"),
+        args: [dstEid, _amount, composedAddress, options],
       });
 
       toast({
@@ -111,14 +120,16 @@ export function useAnyStakeContract() {
 
   const withdraw = (
     chainId: number,
-    _dstEid: number,
     _amount: bigint,
-    _composedAddress: `0x${string}`,
-    _options: `0x${string}`
+    _composedAddress: `0x${string}`
   ) => {
     try {
+      const dstEid =
+        CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW].endpointId;
       const contractAddress =
         CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
+      const composedAddress =
+        CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.stakeAggregator;
 
       if (!contractAddress) {
         throw new Error(`Contract address not found for chain ID: ${chainId}`);
@@ -127,7 +138,7 @@ export function useAnyStakeContract() {
         address: contractAddress as `0x${string}`,
         abi: AnyStakeAbi,
         functionName: "withdraw",
-        args: [_dstEid, _amount, _composedAddress, _options],
+        args: [dstEid, _amount, composedAddress, options],
       });
 
       toast({

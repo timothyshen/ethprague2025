@@ -4,14 +4,17 @@ import { flowTestnet, hederaTestnet, sepolia } from "viem/chains";
 export const CONTRACTS_NEW = {
   // Ethereum Mainnet
   [sepolia.id]: {
+    endpointId: 40121,
     stakeAggregator: "0x57a05e30AFad23658740DcF65e20d2A794eDf81d",
     anyStake: "0xE08a7eb4F58347063350738c4571aaA4DF991570",
   },
   [flowTestnet.id]: {
+    endpointId: 40351,
     stakeAggregator: "0xF3682fcb801aD48D0088aA7EC3641F15171696e3",
     anyStake: "0x0395E9a0aD62cBB28a15281B0c5D801c72a9364c",
   },
   [hederaTestnet.id]: {
+    endpointId: 40285,
     stakeAggregator: "0x9C5Ad9F21165a9A6aFA588C24Ed7292902987CbE",
     anyStake: "0x3ea06d7b5FE23615d39F8D8D63eDB6D717eb9a8A",
   },

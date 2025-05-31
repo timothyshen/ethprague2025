@@ -12,14 +12,14 @@ const typeEnum = {
 
 export function useStakingAggregatorContract() {
   const totalStakedData = useReadContract({
-    address: CONTRACTS_NEW[11_155_111].stakingAggregator as `0x${string}`,
+    address: CONTRACTS_NEW[11_155_111].stakeAggregator as `0x${string}`,
     abi: StakingAggregatorAbi,
     functionName: "getTotalStakedAmount",
   });
 
   const stakedAmountData = (address: `0x${string}`) => {
     const stakedAmountData = useReadContract({
-      address: CONTRACTS_NEW[11_155_111].stakingAggregator as `0x${string}`,
+      address: CONTRACTS_NEW[11_155_111].stakeAggregator as `0x${string}`,
       abi: StakingAggregatorAbi,
       functionName: "stakedAmount",
       args: [address],

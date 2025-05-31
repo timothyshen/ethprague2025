@@ -20,6 +20,9 @@ contract AnyStake is OApp, OAppOptionsType3 {
     mapping(address => uint256) public lockedBalances;
     mapping(bytes32 => PendingWithdrawal) public pendingWithdrawals;
 
+    // StakingAggregator address
+    address public stakingAggregator;
+
     struct PendingWithdrawal {
         address user;
         uint256 amount;
@@ -43,6 +46,15 @@ contract AnyStake is OApp, OAppOptionsType3 {
         uint32 dstEid,
         uint8 operation
     );
+
+    /**
+     * @notice Set the StakingAggregator contract address
+     * @param _stakingAggregator Address of the StakingAggregator contract
+     */
+    function setStakingAggregator(address _stakingAggregator) external onlyOwner {
+        require(_stakingAggregator != address(0), "Invalid address");
+        stakingAggregator = _stakingAggregator;
+    }
 
     /**
      * @notice Stakes tokens by locking them and sending a cross-chain composed message

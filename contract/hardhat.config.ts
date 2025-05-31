@@ -9,7 +9,7 @@ import 'hardhat-deploy'
 import 'hardhat-contract-sizer'
 import '@nomiclabs/hardhat-ethers'
 import '@layerzerolabs/toolbox-hardhat'
-import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/types'
+import { HardhatUserConfig, HttpNetworkAccountsUserConfig } from 'hardhat/config'
 
 import { EndpointId } from '@layerzerolabs/lz-definitions'
 
@@ -70,6 +70,9 @@ const config: HardhatUserConfig = {
         hardhat: {
             // Need this for testing because TestHelperOz5.sol is exceeding the compiled contract size limit
             allowUnlimitedContractSize: true,
+            accounts: {
+                accountsBalance: "10000000000000000000000" // 10000 ETH
+            }
         },
     },
     namedAccounts: {

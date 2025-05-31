@@ -1,73 +1,40 @@
+import { flowTestnet, hederaTestnet, sepolia, baseSepolia } from "viem/chains";
+
 // Chain configuration for different networks
 export const CHAIN_CONFIG = {
   // Ethereum Mainnet
-  1: {
-    name: "Ethereum",
-    logo: "🔷",
-    rpcUrl: `https://eth-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-    blockExplorer: "https://etherscan.io",
-    nativeCurrency: {
-      name: "Ether",
-      symbol: "ETH",
-      decimals: 18,
-    },
+  [sepolia.id]: {
+    name: "Ethereum Sepolia",
+    chainId: sepolia.id,
+    rpcUrl: sepolia.rpcUrls.default.http[0],
+    explorerUrl: sepolia.blockExplorers.default.url,
   },
-  // Base
-  8453: {
-    name: "Base",
-    logo: "🔵",
-    rpcUrl: `https://base-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-    blockExplorer: "https://basescan.org",
-    nativeCurrency: {
-      name: "Ether",
-      symbol: "ETH",
-      decimals: 18,
-    },
+  [baseSepolia.id]: {
+    name: "Base Sepolia",
+    chainId: baseSepolia.id,
+    rpcUrl: baseSepolia.rpcUrls.default.http[0],
+    explorerUrl: baseSepolia.blockExplorers.default.url,
   },
-  // Optimism
-  10: {
-    name: "Optimism",
-    logo: "🔴",
-    rpcUrl: `https://opt-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-    blockExplorer: "https://optimistic.etherscan.io",
-    nativeCurrency: {
-      name: "Ether",
-      symbol: "ETH",
-      decimals: 18,
-    },
+  [flowTestnet.id]: {
+    name: "Flow Testnet",
+    chainId: flowTestnet.id,
+    rpcUrl: flowTestnet.rpcUrls.default.http[0],
+    explorerUrl: flowTestnet.blockExplorers.default.url,
   },
-  // Polygon
-  137: {
-    name: "Polygon",
-    logo: "🟣",
-    rpcUrl: `https://polygon-mainnet.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-    blockExplorer: "https://polygonscan.com",
-    nativeCurrency: {
-      name: "MATIC",
-      symbol: "MATIC",
-      decimals: 18,
-    },
+  [hederaTestnet.id]: {
+    name: "Hedera Testnet",
+    chainId: hederaTestnet.id,
+    rpcUrl: hederaTestnet.rpcUrls.default.http[0],
+    explorerUrl: hederaTestnet.blockExplorers.default.url,
   },
-  // Sepolia Testnet
-  11155111: {
-    name: "Sepolia",
-    logo: "🔷",
-    rpcUrl: `https://eth-sepolia.g.alchemy.com/v2/${process.env.NEXT_PUBLIC_ALCHEMY_API_KEY}`,
-    blockExplorer: "https://sepolia.etherscan.io",
-    nativeCurrency: {
-      name: "Sepolia Ether",
-      symbol: "ETH",
-      decimals: 18,
-    },
-  },
-} as const
+} as const;
 
-export type ChainId = keyof typeof CHAIN_CONFIG
+export type ChainId = keyof typeof CHAIN_CONFIG;
 
 export function getChainConfig(chainId: number) {
-  return CHAIN_CONFIG[chainId as ChainId]
+  return CHAIN_CONFIG[chainId as ChainId];
 }
 
 export function isChainSupported(chainId: number): chainId is ChainId {
-  return chainId in CHAIN_CONFIG
+  return chainId in CHAIN_CONFIG;
 }

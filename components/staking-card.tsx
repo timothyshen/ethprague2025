@@ -12,10 +12,14 @@ import { Badge } from "@/components/ui/badge"
 import { Loader2, TrendingUp, Lock, Unlock, ArrowRight } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
+import { useChainBalance } from "@/hooks/use-chain-balance"
+import { sepolia, flowTestnet, hederaTestnet } from "viem/chains"
 
 // Add these imports at the top
 import { useStakingContract } from "@/hooks/use-staking-contract"
 import { useContractEvents } from "@/hooks/use-contract-events"
+
+import { useStakingAggregatorContract } from "@/hooks/use-stakingAggregator-contract"
 
 interface StakingPool {
   id: string
@@ -34,9 +38,9 @@ interface StakingCardProps {
 
 // Define supported source chains for cross-chain staking
 const sourceChains = [
-  { id: "ethereum", name: "Ethereum", logo: "🔷", fee: "0.001 ETH" },
-  { id: "flow", name: "Flow", logo: "🌊", fee: "0.002 ETH" },
-  { id: "hedera", name: "Hedera", logo: "♦️", fee: "0.0015 ETH" },
+  { id: sepolia.id, name: "Ethereum", logo: "🔷", fee: "0.001 ETH" },
+  { id: flowTestnet.id, name: "Flow", logo: "🌊", fee: "0.002 ETH" },
+  { id: hederaTestnet.id, name: "Hedera", logo: "♦️", fee: "0.0015 ETH" },
 ]
 
 // Update the StakingCard component to use real contract data
@@ -63,6 +67,9 @@ export function StakingCard({ pool }: StakingCardProps) {
     isConfirming: isStakingConfirming,
   } = useStakingContract()
 
+
+  const { totalStakedData, stakedAmountData } = useStakingAggregatorContract()
+
   // Watch for contract events
   useContractEvents(address)
 
@@ -70,12 +77,13 @@ export function StakingCard({ pool }: StakingCardProps) {
     address,
   })
 
+  const balances = useChainBalance();
   // Update pool data with real contract data
   const updatedPool = {
     ...pool,
-    totalStaked: totalStaked,
+    totalStaked: totalStakedData.data ? (Number(totalStakedData.data) / 1e18).toFixed(4) : "5.00",
     apy: apy,
-    userStaked: stakedAmount ? (Number(stakedAmount) / 1e18).toFixed(4) : "0.00",
+    userStaked: stakedAmountData(address as `0x${string}`).data ? (Number(stakedAmountData(address as `0x${string}`).data) / 1e18).toFixed(4) : "5.00",
   }
 
   const handleStakeAmountNext = () => {
@@ -253,6 +261,11 @@ export function StakingCard({ pool }: StakingCardProps) {
                           <div className="flex items-center space-x-2">
                             <span className="text-xl">{chain.logo}</span>
                             <span>{chain.name}</span>
+                            {balances[chain.id] && (
+                              <p className="text-sm text-muted-foreground">
+                                Balance: {formatEther(balances[chain.id].value)} {balances[chain.id].symbol}
+                              </p>
+                            )}
                           </div>
                           <Badge variant="outline">Bridge Fee: {chain.fee}</Badge>
                         </Label>

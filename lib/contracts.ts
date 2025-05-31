@@ -1,3 +1,26 @@
+import { flowTestnet, hederaTestnet, sepolia, baseSepolia } from "viem/chains";
+
+// Contract addresses for different networks
+export const CONTRACTS_NEW = {
+  // Ethereum Mainnet
+  [sepolia.id]: {
+    stakingAggregator: "0x1234567890123456789012345678901234567890",
+    anyStake: "0x2345678901234567890123456789012345678901",
+  },
+  [baseSepolia.id]: {
+    stakingAggregator: "0x1234567890123456789012345678901234567890",
+    anyStake: "0x2345678901234567890123456789012345678901",
+  },
+  [flowTestnet.id]: {
+    stakingAggregator: "0x1234567890123456789012345678901234567890",
+    anyStake: "0x2345678901234567890123456789012345678901",
+  },
+  [hederaTestnet.id]: {
+    stakingAggregator: "0x1234567890123456789012345678901234567890",
+    anyStake: "0x2345678901234567890123456789012345678901",
+  },
+} as const;
+
 // Contract addresses for different networks
 export const CONTRACTS = {
   // Ethereum Mainnet
@@ -17,7 +40,7 @@ export const CONTRACTS = {
   137: {
     bridgeSender: "0x5678901234567890123456789012345678901234",
   },
-} as const
+} as const;
 
 // Staking Pool ABI
 export const STAKING_POOL_ABI = [
@@ -169,7 +192,7 @@ export const STAKING_POOL_ABI = [
     name: "RewardsClaimed",
     type: "event",
   },
-] as const
+] as const;
 
 // Bridge Sender ABI (for L2s)
 export const BRIDGE_SENDER_ABI = [
@@ -236,7 +259,7 @@ export const BRIDGE_SENDER_ABI = [
     name: "BridgeInitiated",
     type: "event",
   },
-] as const
+] as const;
 
 // Bridge Receiver ABI (for Ethereum)
 export const BRIDGE_RECEIVER_ABI = [
@@ -288,4 +311,4 @@ export const BRIDGE_RECEIVER_ABI = [
     name: "BridgeCompleted",
     type: "event",
   },
-] as const
+] as const;

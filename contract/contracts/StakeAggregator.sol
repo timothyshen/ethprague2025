@@ -67,6 +67,7 @@ contract StakeAggregator is ILayerZeroComposer, Ownable {
         address,
         bytes calldata
     ) external payable override {
+        require(_oApp == anyStakeContract, "!oApp");
         require(msg.sender == endpoint, "!endpoint");
 
         (uint8 _operation, uint256 _amount, address _user, uint32 _srcEid, bytes32 _originalGuid) = 
@@ -80,16 +81,12 @@ contract StakeAggregator is ILayerZeroComposer, Ownable {
             
         } else if (_operation == OPERATION_WITHDRAW) {
             // Perform withdrawal - simplified to always succeed for hackathon
-            bool success = false;
-            if (stakedAmount[_user] >= _amount && address(this).balance >= _amount) {
-                stakedAmount[_user] -= _amount;
-                totalStaked -= _amount;
-                success = true;
-                emit Withdrawn(_user, _amount);
-            }
+            stakedAmount[_user] -= _amount;
+            totalStaked -= _amount;
+            emit Withdrawn(_user, _amount);
             
             // Send confirmation back to source via AnyStake.send()
-            _sendConfirmationViaAnyStake(_user, _amount, _srcEid, success);
+            _sendConfirmationViaAnyStake(_user, _amount, _srcEid, true);
         }
         
         emit ComposedMessageReceived(_user, _amount, _guid, _operation);

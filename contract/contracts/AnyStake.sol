@@ -183,8 +183,6 @@ contract AnyStake is OApp, OAppOptionsType3 {
 
         if (_operation == OPERATION_WITHDRAW_SUCCESS) {
             _handleWithdrawalSuccess(_user, _amount);
-        } else if (_operation == OPERATION_WITHDRAW_FAILED) {
-            _handleWithdrawalFailure(_user, _amount);
         } else {
             // Handle composed messages
             _handleComposedMessage(_origin, _guid, _operation, _amount, _user, _composedAddress);
@@ -210,23 +208,14 @@ contract AnyStake is OApp, OAppOptionsType3 {
         }
     }
 
-    /**
-     * @notice Handle failed withdrawal - simplified for hackathon
-     */
-    function _handleWithdrawalFailure(address _user, uint256 _amount) internal {
-        bytes32 pendingGuid = _findPendingWithdrawal(_user, _amount);
-        if (pendingGuid != bytes32(0)) {
-            delete pendingWithdrawals[pendingGuid];
-            data = "Withdrawal failed";
-        }
-    }
-
+  
     /**
      * @notice Simple helper to find pending withdrawal
      */
     function _findPendingWithdrawal(address _user, uint256 _amount) internal view returns (bytes32) {
         // Simplified for hackathon - just find the first matching withdrawal
         // In production, this would need proper implementation
+        
         return bytes32(uint256(1)); // Simplified return
     }
 

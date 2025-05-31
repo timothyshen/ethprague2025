@@ -1,4 +1,4 @@
-const stakingAggregatorAbi = [
+export const StakingAggregatorAbi = [
   {
     inputs: [
       {

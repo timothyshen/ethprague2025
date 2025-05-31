@@ -1,4 +1,4 @@
-const anyStakeAbi = [
+export const AnyStakeAbi = [
   {
     inputs: [
       {

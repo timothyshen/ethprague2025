@@ -22,11 +22,7 @@ const MNEMONIC = process.env.MNEMONIC
 // If you prefer to be authenticated using a private key, set a PRIVATE_KEY environment variable
 const PRIVATE_KEY = process.env.PRIVATE_KEY
 
-const accounts: HttpNetworkAccountsUserConfig | undefined = MNEMONIC
-    ? { mnemonic: MNEMONIC }
-    : PRIVATE_KEY
-      ? [PRIVATE_KEY]
-      : undefined
+const accounts: HttpNetworkAccountsUserConfig | undefined = PRIVATE_KEY
 
 if (accounts == null) {
     console.warn(
@@ -52,27 +48,32 @@ const config: HardhatUserConfig = {
         ],
     },
     networks: {
-        'optimism-testnet': {
-            eid: EndpointId.OPTSEP_V2_TESTNET,
-            url: process.env.RPC_URL_OP_SEPOLIA || 'https://optimism-sepolia.gateway.tenderly.co',
-            accounts,
+        'hedera-testnet': {
+            eid: EndpointId.HEDERA_TESTNET,
+            url: process.env.RPC_URL_HEDERA_TESTNET || 'https://testnet.hashio.io/api',
+            accounts: [process.env.PRIVATE_KEY || ''],
         },
         'flow-testnet': {
             eid: EndpointId.FLOW_TESTNET,
-            url: process.env.RPC_URL_FUJI || 'https://avalanche-fuji.drpc.org',
-            accounts,
+            url: process.env.RPC_URL_FUJI || 'https://flow-testnet.g.alchemy.com/v2/',
+            accounts: [process.env.PRIVATE_KEY || ''],
         },
-        'arbitrum-testnet': {
-            eid: EndpointId.ARBSEP_V2_TESTNET,
-            url: process.env.RPC_URL_ARB_SEPOLIA || 'https://arbitrum-sepolia.gateway.tenderly.co',
-            accounts,
+        'ethereum-sepolia': {
+            eid: EndpointId.SEPOLIA_V2_TESTNET,
+            url: process.env.RPC_URL_ETH_SEPOLIA || 'https://eth-sepolia.g.alchemy.com/v2/',
+            accounts: [process.env.PRIVATE_KEY || ''],
         },
+        // 'arbitrum-testnet': {
+        //     eid: EndpointId.ARBSEP_V2_TESTNET,
+        //     url: process.env.RPC_URL_ARB_SEPOLIA || '',
+        //     accounts,
+        // },
         hardhat: {
             // Need this for testing because TestHelperOz5.sol is exceeding the compiled contract size limit
             allowUnlimitedContractSize: true,
             accounts: {
-                accountsBalance: "10000000000000000000000" // 10000 ETH
-            }
+                accountsBalance: '10000000000000000000000', // 10000 ETH
+            },
         },
     },
     namedAccounts: {

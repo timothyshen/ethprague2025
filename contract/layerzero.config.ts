@@ -72,7 +72,7 @@ export default async function () {
         contracts: [
             { contract: ethereumSepoliaContract },
             { contract: flowTestnetContract },
-            { contract: hederaTestnetContract }
+            { contract: hederaTestnetContract },
         ],
         connections,
     }

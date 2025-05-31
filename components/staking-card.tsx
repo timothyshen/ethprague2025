@@ -65,7 +65,7 @@ export function StakingCard({ pool }: StakingCardProps) {
   // Update pool data with real contract data
   const updatedPool = {
     ...pool,
-    totalStaked: totalStakedData.data ? (Number(totalStakedData.data) / 1e18).toFixed(4) : "5.00",
+    totalStaked: (Number(totalStakedData.data) / 1e18).toFixed(4),
     apy: 10,
     userStaked: stakedAmountData(address as `0x${string}`).data ? (Number(stakedAmountData(address as `0x${string}`).data) / 1e18).toFixed(4) : "5.00",
   }

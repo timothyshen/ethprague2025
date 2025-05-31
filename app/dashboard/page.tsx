@@ -1,13 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useAccount } from "wagmi"
 import { Navbar } from "@/components/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { TrendingUp, Wallet, ExternalLink, Gift, BarChart3 } from "lucide-react"
+import { TrendingUp, Wallet, ExternalLink, Gift, BarChart3, Loader2 } from "lucide-react"
 import { ConnectKitButton } from "connectkit"
 import { StakingAnalytics } from "@/components/staking-analytics"
 import { BridgeTransactionTracker } from "@/components/bridge-transaction-tracker"
@@ -23,8 +23,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Label } from "@/components/ui/label"
 import { TransactionMonitor } from "@/components/transaction-monitor"
-import { useAggregateAllBalanceMock } from "@/hooks/use-aggregate-all-balance-mock"
-
+import { useAggregateAllBalance } from "@/hooks/use-aggregate-all-balance"
+import { useStakingAggregatorContract } from "@/hooks/use-stakingAggregator-contract"
 
 const transactions = [
   {
@@ -77,7 +77,19 @@ export default function DashboardPage() {
   const { toast } = useToast()
 
   const isPending = false
-  const { totalBalance, positions, totalChains, isLoading: isBalanceLoading } = useAggregateAllBalanceMock()
+  const { totalBalance, positions, totalChains, isLoading: isBalanceLoading } = useAggregateAllBalance()
+  const { totalStakedData } = useStakingAggregatorContract();
+
+
+  useEffect(() => {
+    const getTotalStaked = async () => {
+      const totalStaked = await totalStakedData();
+      console.log("totalStaked", totalStaked);
+    }
+    getTotalStaked().then((totalStaked) => {
+      console.log("totalStaked", totalStaked);
+    });
+  }, [totalStakedData]);
 
   const stakingPositions = [
     {
@@ -85,8 +97,8 @@ export default function DashboardPage() {
       pool: "ETH Staking Pool",
       sourceChain: "Ethereum",
       chainLogo: "🔷",
-      amount: totalBalance || "0.00",
       token: "ETH",
+      amount: totalBalance,
       value: `$${(Number.parseFloat(totalBalance || "0") * 1700).toFixed(2)}`,
       apy: 12.5,
       rewards: "10.00",
@@ -100,7 +112,7 @@ export default function DashboardPage() {
 
     toast({
       title: "Unstaking Initiated",
-      description: `Unstaking ${selectedPosition.position.amount} ${selectedPosition.position.token} to ${destinationChain}`,
+      description: `Unstaking ${totalBalance} ${selectedPosition.position.token} to ${destinationChain}`,
     })
 
     setUnstakeDialogOpen(false)
@@ -230,7 +242,7 @@ export default function DashboardPage() {
                       <div>
                         <p className="text-sm text-muted-foreground">Staked Amount</p>
                         <p className="font-medium">
-                          {position.amount} {position.token}
+                          {totalBalance} {position.token}
                         </p>
                         <p className="text-sm text-muted-foreground">{position.value}</p>
                       </div>
@@ -265,7 +277,7 @@ export default function DashboardPage() {
                                 </div>
                                 <div>
                                   <p className="font-medium">{chainPosition.chainName}</p>
-                                  <p className="text-sm font-bold">{chainPosition.balance} ETH</p>
+                                  <p className="text-sm font-bold">{chainPosition.amount} ETH</p>
                                 </div>
                               </div>
                               <div className="flex space-x-2 mt-3">
@@ -345,7 +357,7 @@ export default function DashboardPage() {
                 <span className="text-lg">{selectedPosition.position.chainLogo}</span>
                 <div>
                   <p className="font-medium">
-                    {selectedPosition.position.amount} {selectedPosition.position.token}
+                    {totalBalance} {selectedPosition.position.token}
                   </p>
                   <p className="text-sm text-muted-foreground">Source: {selectedPosition.position.sourceChain}</p>
                 </div>

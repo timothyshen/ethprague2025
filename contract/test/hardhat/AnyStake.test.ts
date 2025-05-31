@@ -176,8 +176,34 @@ describe('AnyStake Test', function () {
                 console.log('Transaction hash:', receipt.transactionHash)
                 console.log('Gas used:', receipt.gasUsed.toString())
 
+                // Add detailed lzCompose logging
+                console.log('\n=== LayerZero Compose Debug ===')
+                console.log('StakingAggregator address:', stakingAggregator.address)
+                console.log('AnyStakeA address:', anyStakeA.address)
+                console.log('AnyStakeB address:', anyStakeB.address)
+                
+                // Get the lzCompose events from StakingAggregator
+                const composeFilter = stakingAggregator.filters.ComposedMessageReceived()
+                const composeLogs = await ethers.provider.getLogs({
+                    ...composeFilter,
+                    fromBlock: receipt.blockNumber,
+                    toBlock: receipt.blockNumber,
+                })
+                
+                console.log('\n=== Composed Message Logs ===')
+                console.log('Number of compose events:', composeLogs.length)
+                if (composeLogs.length > 0) {
+                    for (const log of composeLogs) {
+                        const parsedLog = stakingAggregator.interface.parseLog(log)
+                        console.log('Compose Event:', parsedLog.name)
+                        console.log('User:', parsedLog.args.user)
+                        console.log('Amount:', ethers.utils.formatEther(parsedLog.args.amount))
+                        console.log('Operation:', parsedLog.args.operation)
+                    }
+                }
+
                 // Log events
-                console.log('\n=== Events ===')
+                console.log('\n=== All Events ===')
                 if (receipt.events) {
                     for (const event of receipt.events) {
                         if (event.event) {
@@ -212,18 +238,16 @@ describe('AnyStake Test', function () {
                 console.log('Locked balance in AnyStakeA:', ethers.utils.formatEther(lockedBalance))
                 expect(lockedBalance).to.equal(TEST_AMOUNT)
 
-                console.log('Verify deposit in StakingAggregator')
                 // Verify deposit in StakingAggregator
                 const userStakedAmount = await stakingAggregator.stakedAmount(userA.address)
                 console.log('User address:', userA.address)
                 console.log('Staked amount in StakingAggregator:', ethers.utils.formatEther(userStakedAmount))
-
-                // expect(userStakedAmount).to.equal(TEST_AMOUNT)
+                expect(userStakedAmount).to.equal(TEST_AMOUNT)
 
                 // Verify total staked amount
                 const totalStaked = await stakingAggregator.totalStaked()
                 console.log('Total staked in StakingAggregator:', ethers.utils.formatEther(totalStaked))
-                // expect(totalStaked).to.equal(TEST_AMOUNT)
+                expect(totalStaked).to.equal(TEST_AMOUNT)
 
                 // Verify events
                 await expect(tx).to.emit(anyStakeA, 'Deposited').withArgs(userA.address, TEST_AMOUNT)

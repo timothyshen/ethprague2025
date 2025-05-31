@@ -44,6 +44,12 @@ contract AnyStake is OApp, OAppOptionsType3 {
         uint8 operation
     );
 
+    address public stakingAggregator;
+
+    function setStakingAggregator(address _stakingAggregator) external onlyOwner {
+        stakingAggregator = _stakingAggregator;
+    }
+
     /**
      * @notice Stakes tokens by locking them and sending a cross-chain composed message
      */

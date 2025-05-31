@@ -10,7 +10,7 @@ import { NotificationProvider } from "@/components/notification-provider"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "AnyStaking - Cross-Chain Staking Protocol",
+  title: "AnyStake - Cross-Chain Staking Protocol",
   description: "Stake your tokens across multiple chains with ease",
     generator: 'v0.dev'
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import Image from "next/image"
 import { usePathname } from "next/navigation"
 import { ConnectKitButton } from "connectkit"
 import { Menu, Coins, BarChart3, Moon, Sun, ArrowRight, Calculator } from "lucide-react"
@@ -29,8 +30,15 @@ export function Navbar() {
         <div className="flex h-16 justify-between">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <Coins className="h-8 w-8 text-primary" />
-              <span className="text-xl font-bold">AnyStaking</span>
+              <Image 
+                src="/logo.png"
+                alt="AnyStake Logo"
+                width={32}
+                height={32}
+                className="h-8 w-8"
+                priority
+              />
+              <span className="text-xl font-bold">AnyStake</span>
             </Link>
           </div>
 

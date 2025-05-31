@@ -36,7 +36,13 @@ contract AnyStake is OApp, OAppOptionsType3 {
     event WithdrawalInitiated(address indexed user, uint256 amount, bytes32 indexed guid);
     event WithdrawalConfirmed(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
-    event ComposedMessageSent(address indexed user, uint256 amount, address composedAddress, uint32 dstEid, uint8 operation);
+    event ComposedMessageSent(
+        address indexed user,
+        uint256 amount,
+        address composedAddress,
+        uint32 dstEid,
+        uint8 operation
+    );
 
     /**
      * @notice Stakes tokens by locking them and sending a cross-chain composed message
@@ -50,14 +56,22 @@ contract AnyStake is OApp, OAppOptionsType3 {
         require(msg.value >= _amount, "Insufficient ETH sent");
         require(_amount > 0, "Must stake a positive amount");
 
-        MessagingFee memory messagingFee = quote(_dstEid, OPERATION_DEPOSIT, _amount, msg.sender, _composedAddress, _options, false);
+        MessagingFee memory messagingFee = quote(
+            _dstEid,
+            OPERATION_DEPOSIT,
+            _amount,
+            msg.sender,
+            _composedAddress,
+            _options,
+            false
+        );
         require(msg.value >= messagingFee.nativeFee + _amount, "Insufficient ETH sent");
-        
+
         lockedBalances[msg.sender] += _amount;
-        
+
         bytes memory _payload = abi.encode(OPERATION_DEPOSIT, _amount, msg.sender, _composedAddress);
         receipt = _lzSend(_dstEid, _payload, _options, messagingFee, payable(msg.sender));
-        
+
         emit Deposited(msg.sender, _amount);
         emit ComposedMessageSent(msg.sender, _amount, _composedAddress, _dstEid, OPERATION_DEPOSIT);
     }
@@ -74,21 +88,30 @@ contract AnyStake is OApp, OAppOptionsType3 {
         require(lockedBalances[msg.sender] >= _amount, "Insufficient balance");
         require(_amount > 0, "Must withdraw a positive amount");
 
-        MessagingFee memory messagingFee = quote(_dstEid, OPERATION_WITHDRAW, _amount, msg.sender, _composedAddress, _options, false);
+        MessagingFee memory messagingFee = quote(
+            _dstEid,
+            OPERATION_WITHDRAW,
+            _amount,
+            msg.sender,
+            _composedAddress,
+            _options,
+            false
+        );
         require(msg.value >= messagingFee.nativeFee, "Insufficient ETH for fees");
 
         bytes memory _payload = abi.encode(OPERATION_WITHDRAW, _amount, msg.sender, _composedAddress);
         receipt = _lzSend(_dstEid, _payload, _options, messagingFee, payable(msg.sender));
-        
+
         // Store pending withdrawal
-        pendingWithdrawals[receipt.guid] = PendingWithdrawal({
-            user: msg.sender,
-            amount: _amount,
-            exists: true
-        });
-        
+        pendingWithdrawals[receipt.guid] = PendingWithdrawal({ user: msg.sender, amount: _amount, exists: true });
+
         emit WithdrawalInitiated(msg.sender, _amount, receipt.guid);
         emit ComposedMessageSent(msg.sender, _amount, _composedAddress, _dstEid, OPERATION_WITHDRAW);
+    }
+
+    function _payNative(uint256 _nativeFee) internal override returns (uint256 nativeFee) {
+        require(msg.value >= _nativeFee, "Insufficient ETH for fees");
+        return _nativeFee;
     }
 
     /**
@@ -98,19 +121,14 @@ contract AnyStake is OApp, OAppOptionsType3 {
      * @param _amount Amount
      * @param _success Whether withdrawal was successful
      */
-    function send(
-        uint32 _dstEid,
-        address _user,
-        uint256 _amount,
-        bool _success
-    ) external payable {
+    function send(uint32 _dstEid, address _user, uint256 _amount, bool _success) external payable {
         uint8 operation = _success ? OPERATION_WITHDRAW_SUCCESS : OPERATION_WITHDRAW_FAILED;
         bytes memory _payload = abi.encode(operation, _amount, _user, address(0));
-        
+
         bytes memory _options = abi.encodePacked(uint16(1), uint128(200000)); // Basic options
         MessagingFee memory messagingFee = _quote(_dstEid, _payload, _options, false);
         require(msg.value >= messagingFee.nativeFee, "Insufficient ETH for fees");
-        
+
         _lzSend(_dstEid, _payload, _options, messagingFee, payable(msg.sender));
     }
 
@@ -179,7 +197,10 @@ contract AnyStake is OApp, OAppOptionsType3 {
         address,
         bytes calldata
     ) internal override {
-        (uint8 _operation, uint256 _amount, address _user, address _composedAddress) = abi.decode(payload, (uint8, uint256, address, address));
+        (uint8 _operation, uint256 _amount, address _user, address _composedAddress) = abi.decode(
+            payload,
+            (uint8, uint256, address, address)
+        );
 
         if (_operation == OPERATION_WITHDRAW_SUCCESS) {
             _handleWithdrawalSuccess(_user, _amount);
@@ -197,25 +218,24 @@ contract AnyStake is OApp, OAppOptionsType3 {
         bytes32 pendingGuid = _findPendingWithdrawal(_user, _amount);
         if (pendingGuid != bytes32(0)) {
             delete pendingWithdrawals[pendingGuid];
-            
+
             lockedBalances[_user] -= _amount;
-            (bool success, ) = payable(_user).call{value: _amount}("");
+            (bool success, ) = payable(_user).call{ value: _amount }("");
             require(success, "ETH transfer failed");
-            
+
             data = "Withdrawal successful";
             emit WithdrawalConfirmed(_user, _amount);
             emit Withdrawn(_user, _amount);
         }
     }
 
-  
     /**
      * @notice Simple helper to find pending withdrawal
      */
-    function _findPendingWithdrawal(address _user, uint256 _amount) internal view returns (bytes32) {
+    function _findPendingWithdrawal(address _user, uint256 _amount) internal pure returns (bytes32) {
         // Simplified for hackathon - just find the first matching withdrawal
         // In production, this would need proper implementation
-        
+
         return bytes32(uint256(1)); // Simplified return
     }
 
@@ -232,7 +252,7 @@ contract AnyStake is OApp, OAppOptionsType3 {
     ) internal {
         string memory operationStr = _operation == OPERATION_DEPOSIT ? "DEPOSIT" : "WITHDRAW";
         data = string(abi.encodePacked("Received ", operationStr, " from user: ", addressToString(_user)));
-        
+
         bytes memory composedPayload = abi.encode(_operation, _amount, _user, _origin.srcEid, _guid);
         endpoint.sendCompose(_composedAddress, _guid, 0, composedPayload);
     }
@@ -251,11 +271,11 @@ contract AnyStake is OApp, OAppOptionsType3 {
         bytes32 value = bytes32(uint256(uint160(_addr)));
         bytes memory alphabet = "0123456789abcdef";
         bytes memory str = new bytes(42);
-        str[0] = '0';
-        str[1] = 'x';
+        str[0] = "0";
+        str[1] = "x";
         for (uint256 i = 0; i < 20; i++) {
-            str[2+i*2] = alphabet[uint8(value[i + 12] >> 4)];
-            str[3+i*2] = alphabet[uint8(value[i + 12] & 0x0f)];
+            str[2 + i * 2] = alphabet[uint8(value[i + 12] >> 4)];
+            str[3 + i * 2] = alphabet[uint8(value[i + 12] & 0x0f)];
         }
         return string(str);
     }

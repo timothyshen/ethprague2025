@@ -67,10 +67,13 @@ const pathways: TwoWayConfig[] = [
 ]
 
 export default async function () {
-    // Generate the connections config based on the pathways
     const connections = await generateConnectionsConfig(pathways)
     return {
-        contracts: [{ contract: optimismContract }, { contract: avalancheContract }, { contract: arbitrumContract }],
+        contracts: [
+            { contract: ethereumSepoliaContract },
+            { contract: flowTestnetContract },
+            { contract: hederaTestnetContract },
+        ],
         connections,
     }
 }

@@ -172,6 +172,9 @@ devDependencies:
   '@nomicfoundation/hardhat-chai-matchers':
     specifier: ^2.0.8
     version: 2.0.8(@nomicfoundation/hardhat-ethers@3.0.8)(chai@4.5.0)(ethers@6.14.3)(hardhat@2.24.1)
+  '@nomiclabs/hardhat-ethers':
+    specifier: ^2.2.3
+    version: 2.2.3(ethers@6.14.3)(hardhat@2.24.1)
   '@types/node':
     specifier: ^22
     version: 22.15.29
@@ -1518,6 +1521,16 @@ packages:
       '@nomicfoundation/solidity-analyzer-linux-x64-gnu': 0.1.2
       '@nomicfoundation/solidity-analyzer-linux-x64-musl': 0.1.2
       '@nomicfoundation/solidity-analyzer-win32-x64-msvc': 0.1.2
+    dev: true
+
+  /@nomiclabs/hardhat-ethers@2.2.3(ethers@6.14.3)(hardhat@2.24.1):
+    resolution: {integrity: sha512-YhzPdzb612X591FOe68q+qXVXGG2ANZRvDo0RRUtimev85rCrAlv/TLMEZw5c+kq9AbzocLTVX/h2jVIFPL9Xg==}
+    peerDependencies:
+      ethers: ^5.0.0
+      hardhat: ^2.0.0
+    dependencies:
+      ethers: 6.14.3
+      hardhat: 2.24.1(typescript@5.8.3)
     dev: true
 
   /@paulmillr/qr@0.2.1:

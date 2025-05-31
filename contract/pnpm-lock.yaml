@@ -50,13 +50,13 @@ devDependencies:
     version: 0.1.12
   '@layerzerolabs/toolbox-hardhat':
     specifier: ~0.6.9
-    version: 0.6.9(@ethersproject/abstract-provider@5.8.0)(@ethersproject/abstract-signer@5.8.0)(@ethersproject/bignumber@5.8.0)(@ethersproject/constants@5.8.0)(@ethersproject/providers@5.8.0)(@nomicfoundation/hardhat-ethers@3.0.8)(@nomiclabs/hardhat-ethers@2.2.3)(ethers@5.8.0)(hardhat-deploy@0.12.4)(hardhat@2.24.1)(solidity-bytes-utils@0.8.4)
+    version: 0.6.9(@ethersproject/abstract-provider@5.8.0)(@ethersproject/abstract-signer@5.8.0)(@ethersproject/bignumber@5.8.0)(@ethersproject/constants@5.8.0)(@ethersproject/providers@5.8.0)(@nomicfoundation/hardhat-ethers@3.0.2)(@nomiclabs/hardhat-ethers@2.2.3)(ethers@5.8.0)(hardhat-deploy@0.12.4)(hardhat@2.24.1)(solidity-bytes-utils@0.8.4)
+  '@nomicfoundation/hardhat-chai-matchers':
+    specifier: 2.0.0
+    version: 2.0.0(@nomicfoundation/hardhat-ethers@3.0.2)(chai@4.5.0)(ethers@5.8.0)(hardhat@2.24.1)
   '@nomicfoundation/hardhat-ethers':
-    specifier: ^3.0.5
-    version: 3.0.8(ethers@5.8.0)(hardhat@2.24.1)
-  '@nomiclabs/hardhat-ethers':
-    specifier: ^2.2.3
-    version: 2.2.3(ethers@5.8.0)(hardhat@2.24.1)
+    specifier: 3.0.2
+    version: 3.0.2(ethers@5.8.0)(hardhat@2.24.1)
   '@openzeppelin/contracts':
     specifier: ^5.0.2
     version: 5.3.0
@@ -1277,7 +1277,7 @@ packages:
     resolution: {integrity: sha512-sod5pk9yOSMTLR/qIdxJmH3i/X7CSK1g7F9S2u4Osv8k4YKKXe0IyChrYtQns/BKdv1ey5MiqnlS5afEO/OPlg==}
     dev: true
 
-  /@layerzerolabs/toolbox-hardhat@0.6.9(@ethersproject/abstract-provider@5.8.0)(@ethersproject/abstract-signer@5.8.0)(@ethersproject/bignumber@5.8.0)(@ethersproject/constants@5.8.0)(@ethersproject/providers@5.8.0)(@nomicfoundation/hardhat-ethers@3.0.8)(@nomiclabs/hardhat-ethers@2.2.3)(ethers@5.8.0)(hardhat-deploy@0.12.4)(hardhat@2.24.1)(solidity-bytes-utils@0.8.4):
+  /@layerzerolabs/toolbox-hardhat@0.6.9(@ethersproject/abstract-provider@5.8.0)(@ethersproject/abstract-signer@5.8.0)(@ethersproject/bignumber@5.8.0)(@ethersproject/constants@5.8.0)(@ethersproject/providers@5.8.0)(@nomicfoundation/hardhat-ethers@3.0.2)(@nomiclabs/hardhat-ethers@2.2.3)(ethers@5.8.0)(hardhat-deploy@0.12.4)(hardhat@2.24.1)(solidity-bytes-utils@0.8.4):
     resolution: {integrity: sha512-BaYoLNbj/JZe29nj6s3FN3Y/sGqKiLRLyJ+Ed+zZRgzubLCg2WOf8hNf+69GKgOcaQ7nu0l1MEkX8iDcx1d6vg==}
     peerDependencies:
       '@nomicfoundation/hardhat-ethers': ^3.0.2
@@ -1304,7 +1304,7 @@ packages:
       '@layerzerolabs/ua-devtools': 3.0.6(@layerzerolabs/devtools@0.4.10)(@layerzerolabs/io-devtools@0.1.17)(@layerzerolabs/lz-definitions@3.0.99)(@layerzerolabs/lz-v2-utilities@3.0.99)(@layerzerolabs/protocol-devtools@1.1.7)(zod@3.25.42)
       '@layerzerolabs/ua-devtools-evm': 5.0.7(@ethersproject/constants@5.8.0)(@ethersproject/contracts@5.8.0)(@layerzerolabs/devtools-evm@1.0.6)(@layerzerolabs/devtools@0.4.10)(@layerzerolabs/io-devtools@0.1.17)(@layerzerolabs/lz-definitions@3.0.99)(@layerzerolabs/lz-v2-utilities@3.0.99)(@layerzerolabs/protocol-devtools-evm@3.0.8)(@layerzerolabs/protocol-devtools@1.1.7)(@layerzerolabs/ua-devtools@3.0.6)(zod@3.25.42)
       '@layerzerolabs/ua-devtools-evm-hardhat': 6.0.11(@ethersproject/abi@5.8.0)(@ethersproject/bytes@5.8.0)(@ethersproject/contracts@5.8.0)(@ethersproject/hash@5.8.0)(@layerzerolabs/devtools-evm-hardhat@2.0.9)(@layerzerolabs/devtools-evm@1.0.6)(@layerzerolabs/devtools@0.4.10)(@layerzerolabs/io-devtools@0.1.17)(@layerzerolabs/lz-definitions@3.0.99)(@layerzerolabs/protocol-devtools-evm@3.0.8)(@layerzerolabs/protocol-devtools@1.1.7)(@layerzerolabs/ua-devtools-evm@5.0.7)(@layerzerolabs/ua-devtools@3.0.6)(ethers@5.8.0)(hardhat-deploy@0.12.4)(hardhat@2.24.1)
-      '@nomicfoundation/hardhat-ethers': 3.0.8(ethers@5.8.0)(hardhat@2.24.1)
+      '@nomicfoundation/hardhat-ethers': 3.0.2(ethers@5.8.0)(hardhat@2.24.1)
       ethers: 5.8.0
       fp-ts: 2.16.10
       hardhat: 2.24.1(ts-node@10.9.2)(typescript@5.8.3)
@@ -1541,8 +1541,27 @@ packages:
       '@nomicfoundation/edr-win32-x64-msvc': 0.11.0
     dev: true
 
-  /@nomicfoundation/hardhat-ethers@3.0.8(ethers@5.8.0)(hardhat@2.24.1):
-    resolution: {integrity: sha512-zhOZ4hdRORls31DTOqg+GmEZM0ujly8GGIuRY7t7szEk2zW/arY1qDug/py8AEktT00v5K+b6RvbVog+va51IA==}
+  /@nomicfoundation/hardhat-chai-matchers@2.0.0(@nomicfoundation/hardhat-ethers@3.0.2)(chai@4.5.0)(ethers@5.8.0)(hardhat@2.24.1):
+    resolution: {integrity: sha512-e2ZFunJBIWDcFKIxQt6GpFRRKUn8ZshoiZ5cmgaKOR1S9XwimiCs2aLUCZ/xjNrdl049kPqdVKYDj6aYeR6WuQ==}
+    peerDependencies:
+      '@nomicfoundation/hardhat-ethers': ^3.0.0
+      chai: ^4.2.0
+      ethers: ^5.7.2
+      hardhat: ^2.9.4
+    dependencies:
+      '@ethersproject/abi': 5.8.0
+      '@nomicfoundation/hardhat-ethers': 3.0.2(ethers@5.8.0)(hardhat@2.24.1)
+      '@types/chai-as-promised': 7.1.8
+      chai: 4.5.0
+      chai-as-promised: 7.1.2(chai@4.5.0)
+      deep-eql: 4.1.4
+      ethers: 5.8.0
+      hardhat: 2.24.1(ts-node@10.9.2)(typescript@5.8.3)
+      ordinal: 1.0.3
+    dev: true
+
+  /@nomicfoundation/hardhat-ethers@3.0.2(ethers@5.8.0)(hardhat@2.24.1):
+    resolution: {integrity: sha512-4Pu3OwyEvnq/gvW2IZ1Lnbcz4yCC4xqzbHze34mXkqbCwV2kHOx6jX3prFDWQ1koxtin725lAazGh9CJtTaYjg==}
     peerDependencies:
       ethers: ^5.7.2
       hardhat: ^2.0.0
@@ -1550,7 +1569,6 @@ packages:
       debug: 4.4.1(supports-color@8.1.1)
       ethers: 5.8.0
       hardhat: 2.24.1(ts-node@10.9.2)(typescript@5.8.3)
-      lodash.isequal: 4.5.0
     transitivePeerDependencies:
       - supports-color
     dev: true
@@ -1914,6 +1932,12 @@ packages:
       '@types/keyv': 3.1.4
       '@types/node': 18.18.14
       '@types/responselike': 1.0.3
+    dev: true
+
+  /@types/chai-as-promised@7.1.8:
+    resolution: {integrity: sha512-ThlRVIJhr69FLlh6IctTXFkmhtP3NpMZ2QGq69StYLyKZFp/HOp1VdKZj7RvfNWYYcJ1xlbLGLLWj1UvP5u/Gw==}
+    dependencies:
+      '@types/chai': 4.3.20
     dev: true
 
   /@types/chai@4.3.20:
@@ -2901,6 +2925,15 @@ packages:
 
   /caseless@0.12.0:
     resolution: {integrity: sha512-4tYFyifaFfGacoiObjJegolkwSU4xQNGbVgUiNYVUxbQ2x2lUsFvY4hVgVzGiIe6WLOPqycWXA40l+PWsxthUw==}
+    dev: true
+
+  /chai-as-promised@7.1.2(chai@4.5.0):
+    resolution: {integrity: sha512-aBDHZxRzYnUYuIAIPBH2s511DjlKPzXNlXSGFC8CwmroWQLfrW0LtE1nK3MAwwNhJPa9raEjNCmRoFpG0Hurdw==}
+    peerDependencies:
+      chai: '>= 2.1.2 < 6'
+    dependencies:
+      chai: 4.5.0
+      check-error: 1.0.3
     dev: true
 
   /chai@4.5.0:
@@ -5536,11 +5569,6 @@ packages:
       p-locate: 5.0.0
     dev: true
 
-  /lodash.isequal@4.5.0:
-    resolution: {integrity: sha512-pDo3lu8Jhfjqls6GkMgpahsF9kCyayhgykjyLMNFTKWrpVdAQtYyB4muAMWozBB4ig/dtWAmsMxLEI8wuz+DYQ==}
-    deprecated: This package is deprecated. Use require('node:util').isDeepStrictEqual instead.
-    dev: true
-
   /lodash.memoize@4.1.2:
     resolution: {integrity: sha512-t7j+NzmgnQzTAYXcsHYLgimltOV1MXHtlOWf6GjL9Kj8GK5FInw5JotxvbOs+IvV1/Dzo04/fCGfLVs7aXb4Ag==}
     dev: true
@@ -6085,6 +6113,10 @@ packages:
       prelude-ls: 1.2.1
       type-check: 0.4.0
       word-wrap: 1.2.5
+    dev: true
+
+  /ordinal@1.0.3:
+    resolution: {integrity: sha512-cMddMgb2QElm8G7vdaa02jhUNbTSrhsgAGUz1OokD83uJTwSUn+nKoNoKVVaRa08yF6sgfO7Maou1+bgLd9rdQ==}
     dev: true
 
   /os-tmpdir@1.0.2:

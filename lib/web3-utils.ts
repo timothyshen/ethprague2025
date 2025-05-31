@@ -39,7 +39,7 @@ export function calculateAPY(
 export function getTransactionUrl(chainId: number, txHash: string): string {
   const explorers: Record<number, string> = {
     11155111: "https://sepolia.etherscan.io/tx/",
-    84532: "https://basescan.org/tx/",
+    84532: "https://sepolia.basescan.org/tx/",
     296: "https://hashscan.io/testnet/transaction/",
     545: "https://evm-testnet.flowscan.io/tx/",
   };

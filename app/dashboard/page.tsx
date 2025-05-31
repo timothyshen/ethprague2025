@@ -348,7 +348,7 @@ export default function DashboardPage() {
                   <p className="font-medium">
                     {selectedPosition.position.amount} {selectedPosition.position.token}
                   </p>
-                  <p className="text-sm text-muted-foreground">Source: {selectedPosition.sourceChain}</p>
+                  <p className="text-sm text-muted-foreground">Source: {selectedPosition.position.sourceChain}</p>
                 </div>
               </div>
 

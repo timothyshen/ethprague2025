@@ -1,12 +1,10 @@
-"use client";
-
 import { useWatchContractEvent } from "wagmi";
 import { CONTRACTS_NEW } from "@/lib/contracts";
 import { AnyStakeAbi } from "@/lib/anyStakeAbi";
 import { StakingAggregatorAbi } from "@/lib/stakingAggregatorAbi";
 import { useToast } from "@/hooks/use-toast";
 import { useNotification } from "@/components/notification-provider";
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 
 export function useContractEvents(userAddress?: `0x${string}`) {
   const { toast } = useToast();
@@ -20,7 +18,7 @@ export function useContractEvents(userAddress?: `0x${string}`) {
   ]);
   const memoizedToast = useCallback(toast, [toast]);
 
-  // Watch staking events
+  // Watch staking events on the aggregator
   useWatchContractEvent({
     address: CONTRACTS_NEW[11_155_111].stakingAggregator as `0x${string}`,
     abi: StakingAggregatorAbi,

@@ -2,17 +2,22 @@ import { useBalance } from "wagmi";
 import { useAccount } from "wagmi";
 import { flowTestnet, hederaTestnet, sepolia, baseSepolia } from "viem/chains";
 
-const chains = [flowTestnet, hederaTestnet, sepolia, baseSepolia];
 
 export function useChainBalance(): Record<number, any> {
   const { address } = useAccount();
-  const balances: Record<number, any> = {};
-  for (const chain of chains) {
-    const { data: balance } = useBalance({
-      address,
-      chainId: chain.id,
-    });
-    balances[chain.id] = balance;
-  }
-  return balances;
+
+  const sepoliaBalance = useBalance({ address, chainId: sepolia.id });
+  const baseSepoliaBalance = useBalance({ address, chainId: baseSepolia.id });
+  const flowTestnetBalance = useBalance({ address, chainId: flowTestnet.id });
+  const hederaTestnetBalance = useBalance({
+    address,
+    chainId: hederaTestnet.id,
+  });
+
+  return {
+    [sepolia.id]: sepoliaBalance.data,
+    [baseSepolia.id]: baseSepoliaBalance.data,
+    [flowTestnet.id]: flowTestnetBalance.data,
+    [hederaTestnet.id]: hederaTestnetBalance.data,
+  };
 }

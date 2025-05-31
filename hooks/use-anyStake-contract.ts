@@ -5,12 +5,9 @@ import {
   useWriteContract,
   useWaitForTransactionReceipt,
 } from "wagmi";
-import { parseEther, formatEther } from "viem";
 import { CONTRACTS_NEW } from "@/lib/contracts";
 import { AnyStakeAbi } from "@/lib/anyStakeAbi";
 import { useToast } from "@/hooks/use-toast";
-import { useAccount } from "wagmi";
-import { useEffect, useState } from "react";
 
 export function useAnyStakeContract() {
   const { toast } = useToast();
@@ -20,14 +17,15 @@ export function useAnyStakeContract() {
       hash,
     });
 
-  const lockedBalancesData = (chainId: number, address: `0x${string}`) =>
-    useReadContract({
+  const lockedBalancesData = (chainId: number, address: `0x${string}`) => {
+    return useReadContract({
       address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
         .anyStake as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "lockedBalances",
       args: [address],
     });
+  };
 
   const pendingWithdrawalData = (chainId: number, guid: "bytes32") =>
     useReadContract({
@@ -43,7 +41,7 @@ export function useAnyStakeContract() {
     _dstEid: number,
     _amount: bigint,
     _composedAddress: `0x${string}`,
-    _options: "bytes"
+    _options: `0x${string}`
   ) =>
     useReadContract({
       address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
@@ -58,7 +56,7 @@ export function useAnyStakeContract() {
     _dstEid: number,
     _amount: bigint,
     _composedAddress: `0x${string}`,
-    _options: "bytes"
+    _options: `0x${string}`
   ) =>
     useReadContract({
       address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
@@ -80,7 +78,7 @@ export function useAnyStakeContract() {
     _dstEid: number,
     _amount: bigint,
     _composedAddress: `0x${string}`,
-    _options: "bytes"
+    _options: `0x${string}`
   ) => {
     try {
       const contractAddress =
@@ -116,7 +114,7 @@ export function useAnyStakeContract() {
     _dstEid: number,
     _amount: bigint,
     _composedAddress: `0x${string}`,
-    _options: "bytes"
+    _options: `0x${string}`
   ) => {
     try {
       const contractAddress =

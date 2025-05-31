@@ -30,7 +30,7 @@ const Footer = () => {
                         </div>
                     </div>
                 </div>
-                <p className="text-center text-gray-400 mt-8"> @2025 AnyStaking. All rights reserved.</p>
+                <p className="text-center text-gray-400 mt-8">&copy; 2025 AnyStaking. All rights reserved.</p>
             </div>
         </footer>
     )

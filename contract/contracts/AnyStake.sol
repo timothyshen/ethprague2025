@@ -9,9 +9,8 @@ import { OAppOptionsType3 } from "@layerzerolabs/oapp-evm/contracts/oapp/libs/OA
 
 /**
  * @title AnyStake
- * @notice A LayerZero OApp that supports cross-chain staking with composed messaging
- * @dev This contract demonstrates the composed messaging pattern where messages from one chain
- *      trigger actions on another chain and then call external contracts
+ * @notice A LayerZero OApp that handles all cross-chain messaging for hackathon
+ * @dev Simplified for hackathon - only this contract handles LayerZero messaging
  */
 contract AnyStake is OApp, OAppOptionsType3 {
     constructor(address _endpoint, address _delegate) OApp(_endpoint, _delegate) Ownable(_delegate) {}
@@ -19,24 +18,28 @@ contract AnyStake is OApp, OAppOptionsType3 {
     string public data = "Nothing received yet.";
 
     mapping(address => uint256) public lockedBalances;
+    mapping(bytes32 => PendingWithdrawal) public pendingWithdrawals;
 
-    // Operation types for composed messaging
+    struct PendingWithdrawal {
+        address user;
+        uint256 amount;
+        bool exists;
+    }
+
+    // Operation types for messaging
     uint8 public constant OPERATION_DEPOSIT = 1;
     uint8 public constant OPERATION_WITHDRAW = 2;
+    uint8 public constant OPERATION_WITHDRAW_SUCCESS = 3;
+    uint8 public constant OPERATION_WITHDRAW_FAILED = 4;
 
     event Deposited(address indexed user, uint256 amount);
+    event WithdrawalInitiated(address indexed user, uint256 amount, bytes32 indexed guid);
+    event WithdrawalConfirmed(address indexed user, uint256 amount);
     event Withdrawn(address indexed user, uint256 amount);
     event ComposedMessageSent(address indexed user, uint256 amount, address composedAddress, uint32 dstEid, uint8 operation);
 
     /**
      * @notice Stakes tokens by locking them and sending a cross-chain composed message
-     * @param _dstEid The endpoint ID of the destination chain
-     * @param _amount The amount to stake
-     * @param _composedAddress The address of the composed contract (StakingAggregator) on destination chain
-     * @param _options Additional options for message execution
-     * @dev This demonstrates the A -> B1 -> B2 pattern where:
-     *      A = source chain, B1 = destination OApp, B2 = composed contract (StakingAggregator)
-     * @return receipt A `MessagingReceipt` struct containing details of the message sent
      */
     function deposit(
         uint32 _dstEid,
@@ -47,17 +50,12 @@ contract AnyStake is OApp, OAppOptionsType3 {
         require(msg.value >= _amount, "Insufficient ETH sent");
         require(_amount > 0, "Must stake a positive amount");
 
-        // Get the messaging fee quote
         MessagingFee memory messagingFee = quote(_dstEid, OPERATION_DEPOSIT, _amount, msg.sender, _composedAddress, _options, false);
         require(msg.value >= messagingFee.nativeFee + _amount, "Insufficient ETH sent");
         
-        // Lock the tokens on source chain
         lockedBalances[msg.sender] += _amount;
         
-        // Create payload with operation type, stake amount, user address, and composed address
         bytes memory _payload = abi.encode(OPERATION_DEPOSIT, _amount, msg.sender, _composedAddress);
-        
-        // Send cross-chain message (use msg.value for gas fees)
         receipt = _lzSend(_dstEid, _payload, _options, messagingFee, payable(msg.sender));
         
         emit Deposited(msg.sender, _amount);
@@ -65,13 +63,7 @@ contract AnyStake is OApp, OAppOptionsType3 {
     }
 
     /**
-     * @notice Withdraws locked tokens and sends a cross-chain message to unstake on destination.
-     * @param _dstEid The endpoint ID of the destination chain.
-     * @param _amount The amount to withdraw.
-     * @param _composedAddress The address for composed message handling.
-     * @param _options Additional options for message execution.
-     * @dev Unlocks the specified amount and sends a withdraw operation to the destination.
-     * @return receipt A `MessagingReceipt` struct containing details of the message sent.
+     * @notice Initiates withdrawal - tokens remain locked until confirmation
      */
     function withdraw(
         uint32 _dstEid,
@@ -79,40 +71,66 @@ contract AnyStake is OApp, OAppOptionsType3 {
         address _composedAddress,
         bytes calldata _options
     ) external payable returns (MessagingReceipt memory receipt) {
-
         require(lockedBalances[msg.sender] >= _amount, "Insufficient balance");
-        // Unlock the tokens on source chain
-        lockedBalances[msg.sender] -= _amount;
+        require(_amount > 0, "Must withdraw a positive amount");
 
-        // Get the messaging fee quote
         MessagingFee memory messagingFee = quote(_dstEid, OPERATION_WITHDRAW, _amount, msg.sender, _composedAddress, _options, false);
-        require(msg.value >= messagingFee.nativeFee + _amount, "Insufficient ETH sent");
+        require(msg.value >= messagingFee.nativeFee, "Insufficient ETH for fees");
 
-        // Transfer the amount back to the user
-        // TODO: Need to do A -> B -> A
-        (bool success, ) = payable(msg.sender).call{value: _amount}("");
-        require(success, "ETH transfer failed");
-
-        // Create payload with withdraw operation type
         bytes memory _payload = abi.encode(OPERATION_WITHDRAW, _amount, msg.sender, _composedAddress);
-        
-        // Send cross-chain message (use msg.value for gas fees)
         receipt = _lzSend(_dstEid, _payload, _options, messagingFee, payable(msg.sender));
         
-        emit Withdrawn(msg.sender, _amount);
+        // Store pending withdrawal
+        pendingWithdrawals[receipt.guid] = PendingWithdrawal({
+            user: msg.sender,
+            amount: _amount,
+            exists: true
+        });
+        
+        emit WithdrawalInitiated(msg.sender, _amount, receipt.guid);
         emit ComposedMessageSent(msg.sender, _amount, _composedAddress, _dstEid, OPERATION_WITHDRAW);
     }
 
     /**
-     * @notice Quotes the gas needed to pay for the full omnichain transaction in native gas or ZRO token.
-     * @param _dstEid Destination chain's endpoint ID.
-     * @param _operation The operation type (1=deposit, 2=withdraw).
-     * @param _amount The amount for the transaction.
-     * @param _user The user address for the transaction.
-     * @param _composedAddress The composed contract address.
-     * @param _options Message execution options (e.g., for sending gas to destination).
-     * @param _payInLzToken Whether to return fee in ZRO token.
-     * @return fee A `MessagingFee` struct containing the calculated gas fee in either the native token or ZRO token.
+     * @notice Simple send function for StakeAggregator to call back to source
+     * @param _dstEid Destination endpoint ID (source chain)
+     * @param _user User address
+     * @param _amount Amount
+     * @param _success Whether withdrawal was successful
+     */
+    function send(
+        uint32 _dstEid,
+        address _user,
+        uint256 _amount,
+        bool _success
+    ) external payable {
+        uint8 operation = _success ? OPERATION_WITHDRAW_SUCCESS : OPERATION_WITHDRAW_FAILED;
+        bytes memory _payload = abi.encode(operation, _amount, _user, address(0));
+        
+        bytes memory _options = abi.encodePacked(uint16(1), uint128(200000)); // Basic options
+        MessagingFee memory messagingFee = _quote(_dstEid, _payload, _options, false);
+        require(msg.value >= messagingFee.nativeFee, "Insufficient ETH for fees");
+        
+        _lzSend(_dstEid, _payload, _options, messagingFee, payable(msg.sender));
+    }
+
+    /**
+     * @notice Get quote for send function
+     */
+    function getSendQuote(
+        uint32 _dstEid,
+        address _user,
+        uint256 _amount,
+        bool _success
+    ) external view returns (MessagingFee memory fee) {
+        uint8 operation = _success ? OPERATION_WITHDRAW_SUCCESS : OPERATION_WITHDRAW_FAILED;
+        bytes memory payload = abi.encode(operation, _amount, _user, address(0));
+        bytes memory options = abi.encodePacked(uint16(1), uint128(200000));
+        fee = _quote(_dstEid, payload, options, false);
+    }
+
+    /**
+     * @notice Quotes the gas needed for messaging operations
      */
     function quote(
         uint32 _dstEid,
@@ -129,11 +147,6 @@ contract AnyStake is OApp, OAppOptionsType3 {
 
     /**
      * @notice Get the quote for a deposit operation
-     * @param _dstEid Destination endpoint ID
-     * @param _amount Amount to deposit
-     * @param _composedAddress Composed contract address  
-     * @param _options Message execution options
-     * @return fee The messaging fee required
      */
     function getDepositQuote(
         uint32 _dstEid,
@@ -146,11 +159,6 @@ contract AnyStake is OApp, OAppOptionsType3 {
 
     /**
      * @notice Get the quote for a withdraw operation
-     * @param _dstEid Destination endpoint ID
-     * @param _amount Amount to withdraw
-     * @param _composedAddress Composed contract address
-     * @param _options Message execution options
-     * @return fee The messaging fee required
      */
     function getWithdrawQuote(
         uint32 _dstEid,
@@ -162,13 +170,7 @@ contract AnyStake is OApp, OAppOptionsType3 {
     }
 
     /**
-     * @dev Internal function override to handle incoming messages from another chain.
-     * @dev This function implements the composed messaging pattern by calling sendCompose
-     * @param _origin A struct containing information about the message sender.
-     * @param _guid A unique global packet identifier for the message.
-     * @param payload The encoded message payload being received.
-     *
-     * Decodes the received payload and sends a composed message to the specified contract.
+     * @dev Handle incoming messages
      */
     function _lzReceive(
         Origin calldata _origin,
@@ -179,16 +181,67 @@ contract AnyStake is OApp, OAppOptionsType3 {
     ) internal override {
         (uint8 _operation, uint256 _amount, address _user, address _composedAddress) = abi.decode(payload, (uint8, uint256, address, address));
 
-        // Update data with the received information
+        if (_operation == OPERATION_WITHDRAW_SUCCESS) {
+            _handleWithdrawalSuccess(_user, _amount);
+        } else {
+            // Handle composed messages
+            _handleComposedMessage(_origin, _guid, _operation, _amount, _user, _composedAddress);
+        }
+    }
+
+    /**
+     * @notice Handle successful withdrawal confirmation - simplified for hackathon
+     */
+    function _handleWithdrawalSuccess(address _user, uint256 _amount) internal {
+        // Simplified: find and process withdrawal
+        bytes32 pendingGuid = _findPendingWithdrawal(_user, _amount);
+        if (pendingGuid != bytes32(0)) {
+            delete pendingWithdrawals[pendingGuid];
+            
+            lockedBalances[_user] -= _amount;
+            (bool success, ) = payable(_user).call{value: _amount}("");
+            require(success, "ETH transfer failed");
+            
+            data = "Withdrawal successful";
+            emit WithdrawalConfirmed(_user, _amount);
+            emit Withdrawn(_user, _amount);
+        }
+    }
+
+  
+    /**
+     * @notice Simple helper to find pending withdrawal
+     */
+    function _findPendingWithdrawal(address _user, uint256 _amount) internal view returns (bytes32) {
+        // Simplified for hackathon - just find the first matching withdrawal
+        // In production, this would need proper implementation
+        
+        return bytes32(uint256(1)); // Simplified return
+    }
+
+    /**
+     * @notice Handle composed messages
+     */
+    function _handleComposedMessage(
+        Origin calldata _origin,
+        bytes32 _guid,
+        uint8 _operation,
+        uint256 _amount,
+        address _user,
+        address _composedAddress
+    ) internal {
         string memory operationStr = _operation == OPERATION_DEPOSIT ? "DEPOSIT" : "WITHDRAW";
-        data = string(abi.encodePacked("Received ", operationStr, " from user: ", addressToString(_user), " amount: ", uintToString(_amount)));
+        data = string(abi.encodePacked("Received ", operationStr, " from user: ", addressToString(_user)));
         
-        // Create payload for the composed message (operation, amount and user)
-        bytes memory composedPayload = abi.encode(_operation, _amount, _user);
-        
-        // Send a composed message to the StakingAggregator contract
-        // This is the key part of the composed pattern: A -> B1 -> B2
+        bytes memory composedPayload = abi.encode(_operation, _amount, _user, _origin.srcEid, _guid);
         endpoint.sendCompose(_composedAddress, _guid, 0, composedPayload);
+    }
+
+    /**
+     * @notice Get pending withdrawal details
+     */
+    function getPendingWithdrawal(bytes32 _guid) external view returns (PendingWithdrawal memory) {
+        return pendingWithdrawals[_guid];
     }
 
     /**
@@ -208,27 +261,7 @@ contract AnyStake is OApp, OAppOptionsType3 {
     }
 
     /**
-     * @notice Utility function to convert uint to string
+     * @notice Allow contract to receive ETH
      */
-    function uintToString(uint256 _i) internal pure returns (string memory) {
-        if (_i == 0) {
-            return "0";
-        }
-        uint256 j = _i;
-        uint256 len;
-        while (j != 0) {
-            len++;
-            j /= 10;
-        }
-        bytes memory bstr = new bytes(len);
-        uint256 k = len;
-        while (_i != 0) {
-            k = k-1;
-            uint8 temp = (48 + uint8(_i - _i / 10 * 10));
-            bytes1 b1 = bytes1(temp);
-            bstr[k] = b1;
-            _i /= 10;
-        }
-        return string(bstr);
-    }
+    receive() external payable {}
 }

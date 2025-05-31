@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="/logo.png" alt="AnyStake Logo" width="128"/>
+  <img src="public/logo.png" alt="AnyStake Logo" width="128"/>
 </p>
 
 # AnyStake

@@ -52,7 +52,7 @@ export default function HomePage() {
         totalStaked: stakingData.totalStaked || "0.00",
         userStaked: stakingData.stakedAmount || "0.00",
         lockPeriod: 30,
-        minStake: "0.01",
+        minStake: "0.001",
       },
     ];
 

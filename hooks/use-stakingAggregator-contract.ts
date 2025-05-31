@@ -17,13 +17,15 @@ export function useStakingAggregatorContract() {
     functionName: "getTotalStakedAmount",
   });
 
-  const stakedAmountData = (address: `0x${string}`) =>
-    useReadContract({
+  const stakedAmountData = (address: `0x${string}`) => {
+    const stakedAmountData = useReadContract({
       address: CONTRACTS_NEW[11_155_111].stakingAggregator as `0x${string}`,
       abi: StakingAggregatorAbi,
       functionName: "stakedAmount",
       args: [address],
     });
+    return stakedAmountData;
+  };
 
   return {
     totalStakedData,

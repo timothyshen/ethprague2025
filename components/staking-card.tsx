@@ -19,6 +19,8 @@ import { sepolia, flowTestnet, hederaTestnet } from "viem/chains"
 import { useStakingContract } from "@/hooks/use-staking-contract"
 import { useContractEvents } from "@/hooks/use-contract-events"
 
+import { useStakingAggregatorContract } from "@/hooks/use-stakingAggregator-contract"
+
 interface StakingPool {
   id: string
   name: string
@@ -65,6 +67,9 @@ export function StakingCard({ pool }: StakingCardProps) {
     isConfirming: isStakingConfirming,
   } = useStakingContract()
 
+
+  const { totalStakedData, stakedAmountData } = useStakingAggregatorContract()
+
   // Watch for contract events
   useContractEvents(address)
 
@@ -76,9 +81,9 @@ export function StakingCard({ pool }: StakingCardProps) {
   // Update pool data with real contract data
   const updatedPool = {
     ...pool,
-    totalStaked: totalStaked,
+    totalStaked: totalStakedData.data ? (Number(totalStakedData.data) / 1e18).toFixed(4) : "5.00",
     apy: apy,
-    userStaked: stakedAmount ? (Number(stakedAmount) / 1e18).toFixed(4) : "0.00",
+    userStaked: stakedAmountData(address as `0x${string}`).data ? (Number(stakedAmountData(address as `0x${string}`).data) / 1e18).toFixed(4) : "5.00",
   }
 
   const handleStakeAmountNext = () => {

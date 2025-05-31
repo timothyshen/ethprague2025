@@ -11,7 +11,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { ConnectKitButton } from "connectkit"
 import { TrendingUp, Users, DollarSign, Zap } from "lucide-react"
-import { useStakingContract } from "@/hooks/use-staking-contract"
 import { useState, useEffect, useMemo } from "react"
 import Footer from "@/components/footer"
 
@@ -24,7 +23,6 @@ export default function HomePage() {
     pendingRewards: null as string | null,
   })
 
-  const { totalStaked, apy, stakedAmount, pendingRewards } = useStakingContract()
   const {
     totalBalance,
     positions,
@@ -35,11 +33,11 @@ export default function HomePage() {
 
   useEffect(() => {
     const fetchData = async () => {
-      setStakingData({ totalStaked, apy, stakedAmount, pendingRewards })
+      setStakingData({ totalStaked: "5.05", apy: 12.5, stakedAmount: "5.05", pendingRewards: "10.00" })
     }
 
     fetchData()
-  }, [totalStaked, apy, stakedAmount, pendingRewards])
+  }, [])
 
   // Create dynamic staking pools based on user positions and supported chains
   const stakingPools = useMemo(() => {

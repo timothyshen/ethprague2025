@@ -1,161 +1,124 @@
-import { sepolia, flowTestnet, hederaTestnet } from "viem/chains";
-import { useAnyStakeContract } from "./use-anyStake-contract";
-import { useAccount } from "wagmi";
-import { useMemo, useState, useEffect } from "react";
+"use client";
+
+import { useState, useEffect } from "react";
+import { useAccount, useChainId } from "wagmi";
 import { formatEther } from "viem";
+import { useStakingAggregatorContract } from "@/hooks/use-stakingAggregator-contract";
+import { useAnyStakeContract } from "@/hooks/use-anyStake-contract";
+import { sepolia, flowTestnet, hederaTestnet } from "viem/chains";
 
-// Supported chains for cross-chain staking
-const SUPPORTED_CHAINS = [
-  { id: sepolia.id, name: "Sepolia", symbol: "🔷" },
-  { id: flowTestnet.id, name: "Flow Testnet", symbol: "🌊" },
-  { id: hederaTestnet.id, name: "Hedera Testnet", symbol: "♦️" },
-] as const;
-
-export interface UserPosition {
+// Define position interface
+export interface StakingPosition {
   chainId: number;
   chainName: string;
-  chainSymbol: string;
-  balance: string; // formatted balance
-  balanceRaw: bigint; // raw balance
-  isLoading: boolean;
-  error: string | null;
+  amount: string;
+  amountFormatted: string;
+  apy: number;
 }
 
-export interface AggregatedBalance {
-  totalBalance: string; // formatted total across all chains
-  totalBalanceRaw: bigint; // raw total balance
-  positions: UserPosition[];
-  isLoading: boolean;
-  hasError: boolean;
-  totalChains: number;
-  chainsWithBalance: number;
-}
-
-export function useAggregateAllBalance(): AggregatedBalance {
+export function useAggregateAllBalance() {
   const { address } = useAccount();
-  const { lockedBalancesData } = useAnyStakeContract();
-  const [positions, setPositions] = useState<UserPosition[]>([]);
+  const chainId = useChainId();
   const [isLoading, setIsLoading] = useState(true);
+  const [totalBalance, setTotalBalance] = useState("0");
+  const [positions, setPositions] = useState<StakingPosition[]>([]);
 
-  // Initialize positions for all supported chains
+  // Get staking data from main chain (StakingAggregator)
+  const { stakedAmountData } = useStakingAggregatorContract();
+
+  // Get AnyStake data
+  const { lockedBalancesData } = useAnyStakeContract();
+
+  // Supported chains
+  const supportedChains = [
+    { id: sepolia.id, name: "Sepolia", symbol: "🔷" },
+    { id: flowTestnet.id, name: "Flow Testnet", symbol: "🌊" },
+    { id: hederaTestnet.id, name: "Hedera Testnet", symbol: "♦️" },
+    // Add other chains as needed
+  ];
+
   useEffect(() => {
-    const initialPositions: UserPosition[] = SUPPORTED_CHAINS.map((chain) => ({
-      chainId: chain.id,
-      chainName: chain.name,
-      chainSymbol: chain.symbol,
-      balance: "0",
-      balanceRaw: BigInt(0),
-      isLoading: true,
-      error: null,
-    }));
+    const fetchAllBalances = async () => {
+      if (!address) {
+        setIsLoading(false);
+        return;
+      }
 
-    setPositions(initialPositions);
-    setIsLoading(true);
-  }, [address]);
+      setIsLoading(true);
 
-  // Fetch balances for each chain
-  useEffect(() => {
-    if (!address) {
-      setIsLoading(false);
-      return;
-    }
+      try {
+        // Process fetched balances
+        const positionsData: StakingPosition[] = [];
+        let totalBalanceBigInt = BigInt(0);
 
-    const fetchBalances = async () => {
-      const updatedPositions = SUPPORTED_CHAINS.map((chain) => {
+        // Fetch and add main chain position
         try {
-          const balanceData = lockedBalancesData(chain.id, address);
-          const balanceRaw = balanceData.data
-            ? (balanceData.data as bigint)
-            : BigInt(0);
-          const balance = formatEther(balanceRaw);
+          const mainChainAmount = await stakedAmountData(
+            address as `0x${string}`
+          );
+          if (mainChainAmount) {
+            const amountBigInt = BigInt(mainChainAmount.toString() || "0");
+            totalBalanceBigInt += amountBigInt;
 
-          return {
-            chainId: chain.id,
-            chainName: chain.name,
-            chainSymbol: chain.symbol,
-            balance,
-            balanceRaw,
-            isLoading: balanceData.isLoading || false,
-            error: balanceData.error ? balanceData.error.message : null,
-          };
+            positionsData.push({
+              chainId: sepolia.id,
+              chainName: "Ethereum Sepolia (Main)",
+              amount: amountBigInt.toString(),
+              amountFormatted: formatEther(amountBigInt),
+              apy: 10, // Hardcoded APY for now
+            });
+          }
         } catch (error) {
-          console.error(`Error fetching balance for ${chain.name}:`, error);
-
-          return {
-            chainId: chain.id,
-            chainName: chain.name,
-            chainSymbol: chain.symbol,
-            balance: "0",
-            balanceRaw: BigInt(0),
-            isLoading: false,
-            error:
-              error instanceof Error
-                ? error.message
-                : "Failed to fetch balance",
-          };
+          console.error("Error fetching main chain data:", error);
         }
-      });
 
-      setPositions(updatedPositions);
-      setIsLoading(updatedPositions.some((p) => p.isLoading));
+        // Fetch balances from other chains sequentially
+        for (const chain of supportedChains) {
+          // Skip main chain as we already processed it
+          if (chain.id === sepolia.id) continue;
+
+          try {
+            const chainAmount = await lockedBalancesData(
+              chain.id,
+              address as `0x${string}`
+            );
+            if (chainAmount) {
+              const amountBigInt = BigInt(chainAmount.toString() || "0");
+              totalBalanceBigInt += amountBigInt;
+
+              positionsData.push({
+                chainId: chain.id,
+                chainName: chain.name,
+                amount: amountBigInt.toString(),
+                amountFormatted: formatEther(amountBigInt),
+                apy: 10, // Hardcoded APY for now
+              });
+            }
+          } catch (error) {
+            console.error(
+              `Error fetching data for chain ${chain.name}:`,
+              error
+            );
+          }
+        }
+
+        // Update state
+        setTotalBalance(formatEther(totalBalanceBigInt));
+        setPositions(positionsData);
+      } catch (error) {
+        console.error("Error fetching aggregate balance:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    fetchBalances();
-  }, [address, lockedBalancesData]);
+    fetchAllBalances();
+  }, [address, chainId]);
 
-  // Compute aggregated data
-  const aggregatedData = useMemo(() => {
-    if (!positions.length) {
-      return {
-        totalBalance: "0",
-        totalBalanceRaw: BigInt(0),
-        positions: [],
-        isLoading: true,
-        hasError: false,
-        totalChains: 0,
-        chainsWithBalance: 0,
-      };
-    }
-
-    const totalBalanceRaw = positions.reduce(
-      (sum, position) => sum + position.balanceRaw,
-      BigInt(0)
-    );
-
-    const totalBalance = formatEther(totalBalanceRaw);
-    const hasError = positions.some((position) => position.error !== null);
-    const chainsWithBalance = positions.filter(
-      (position) => position.balanceRaw > BigInt(0)
-    ).length;
-
-    return {
-      totalBalance,
-      totalBalanceRaw,
-      positions,
-      isLoading,
-      hasError,
-      totalChains: SUPPORTED_CHAINS.length,
-      chainsWithBalance,
-    };
-  }, [positions, isLoading]);
-
-  return aggregatedData;
-}
-
-// Helper hook for getting positions by specific chain
-export function useChainPosition(chainId: number): UserPosition | null {
-  const { positions } = useAggregateAllBalance();
-
-  return useMemo(() => {
-    return positions.find((position) => position.chainId === chainId) || null;
-  }, [positions, chainId]);
-}
-
-// Helper hook for getting non-zero positions only
-export function useActivePositions(): UserPosition[] {
-  const { positions } = useAggregateAllBalance();
-
-  return useMemo(() => {
-    return positions.filter((position) => position.balanceRaw > BigInt(0));
-  }, [positions]);
+  return {
+    totalBalance,
+    positions,
+    totalChains: positions.length,
+    isLoading,
+  };
 }

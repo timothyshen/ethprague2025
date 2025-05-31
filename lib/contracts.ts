@@ -4,7 +4,7 @@ import { flowTestnet, hederaTestnet, sepolia } from "viem/chains";
 export const CONTRACTS_NEW = {
   // Ethereum Mainnet
   [sepolia.id]: {
-    endpointId: 40121,
+    endpointId: 40161,
     stakeAggregator: "0x57a05e30AFad23658740DcF65e20d2A794eDf81d",
     anyStake: "0xE08a7eb4F58347063350738c4571aaA4DF991570",
   },

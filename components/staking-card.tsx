@@ -127,7 +127,8 @@ export function StakingCard({ pool }: StakingCardProps) {
 
   const getBridgeFee = (chainId: number, stakeAmount: string) => {
     try {
-      const quote = depositQuoteData(chainId, parseEther(stakeAmount || "0"))
+      // const quote = depositQuoteData(chainId, parseEther(stakeAmount || "0"))
+      const quote = { data: { nativeFee: parseEther("0.01") } }
       if (quote?.data && typeof quote.data === 'object') {
         // Safely access with type assertion
         const fee = (quote.data as any).nativeFee

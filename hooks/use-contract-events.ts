@@ -2,7 +2,7 @@
 
 import { useWatchContractEvent } from "wagmi";
 import { CONTRACTS_NEW } from "@/lib/contracts";
-import { AnyStakeAbi } from "@/lib/anyStakeAbi";
+import { AnyStakeAbi } from "@/lib/anyStakeabi";
 import { StakingAggregatorAbi } from "@/lib/stakingAggregatorAbi";
 import { useToast } from "@/hooks/use-toast";
 import { useNotification } from "@/components/notification-provider";

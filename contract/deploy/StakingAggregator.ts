@@ -13,7 +13,7 @@ const deploy: DeployFunction = async (hre) => {
 
     const { address } = await deploy(contractName, {
         from: deployer,
-        args: [endpointV2Deployment.address, anyStakeDeployment.address, deployer],
+        args: [endpointV2Deployment.address, '0x3f4cbb37f03f7af7eb0d1c6989e4f077718b73c3', deployer],
         log: true,
         skipIfAlreadyDeployed: false,
     })

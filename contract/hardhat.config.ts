@@ -49,18 +49,18 @@ const config: HardhatUserConfig = {
     },
     networks: {
         'hedera-testnet': {
-            eid: EndpointId.HEDERA_TESTNET,
+            eid: EndpointId.HEDERA_V2_TESTNET,
             url: process.env.RPC_URL_HEDERA_TESTNET || 'https://testnet.hashio.io/api',
             accounts: [process.env.PRIVATE_KEY || ''],
         },
         'flow-testnet': {
-            eid: EndpointId.FLOW_TESTNET,
-            url: process.env.RPC_URL_FUJI || 'https://flow-testnet.g.alchemy.com/v2/',
+            eid: EndpointId.FLOW_V2_TESTNET,
+            url: process.env.RPC_URL_FUJI || 'https://flow-testnet.g.alchemy.com/v2/RZJ-p0JGsmg8yN4Kk5ysF',
             accounts: [process.env.PRIVATE_KEY || ''],
         },
         'ethereum-sepolia': {
             eid: EndpointId.SEPOLIA_V2_TESTNET,
-            url: process.env.RPC_URL_ETH_SEPOLIA || 'https://eth-sepolia.g.alchemy.com/v2/',
+            url: process.env.RPC_URL_ETH_SEPOLIA || 'https://eth-sepolia.g.alchemy.com/v2/RZJ-p0JGsmg8yN4Kk5ysF',
             accounts: [process.env.PRIVATE_KEY || ''],
         },
         // 'arbitrum-testnet': {

@@ -119,11 +119,7 @@ export function useAnyStakeContract() {
     }
   };
 
-  const withdraw = (
-    chainId: number,
-    _amount: bigint,
-    _composedAddress: `0x${string}`
-  ) => {
+  const withdraw = (chainId: number, _amount: bigint) => {
     try {
       const dstEid =
         CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW].endpointId;
@@ -138,6 +134,7 @@ export function useAnyStakeContract() {
       writeContract({
         address: contractAddress as `0x${string}`,
         abi: AnyStakeAbi,
+        value: parseEther("2"),
         functionName: "withdraw",
         args: [40161, _amount, composedAddress, options],
       });

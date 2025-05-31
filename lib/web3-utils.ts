@@ -44,7 +44,7 @@ export function getTransactionUrl(chainId: number, txHash: string): string {
     545: "https://evm-testnet.flowscan.io/tx/",
   };
 
-  return `${explorers[chainId] || explorers[1]}${txHash}`;
+  return `${explorers[chainId] || explorers[11155111]}${txHash}`;
 }
 
 export function validateEthereumAddress(address: string): boolean {

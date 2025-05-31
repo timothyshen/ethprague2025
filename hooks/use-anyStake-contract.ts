@@ -80,8 +80,10 @@ export function useAnyStakeContract() {
       const contractAddress =
         CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
 
-      useWriteContract({
-        // @ts-ignore
+      if (!contractAddress) {
+        throw new Error(`Contract address not found for chain ID: ${chainId}`);
+      }
+      writeContract({
         address: contractAddress as `0x${string}`,
         abi: AnyStakeAbi,
         functionName: "deposit",
@@ -114,8 +116,10 @@ export function useAnyStakeContract() {
       const contractAddress =
         CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
 
-      useWriteContract({
-        // @ts-ignore
+      if (!contractAddress) {
+        throw new Error(`Contract address not found for chain ID: ${chainId}`);
+      }
+      writeContract({
         address: contractAddress as `0x${string}`,
         abi: AnyStakeAbi,
         functionName: "withdraw",

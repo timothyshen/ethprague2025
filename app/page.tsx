@@ -8,13 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { ConnectKitButton } from "connectkit"
 import { TrendingUp, Users, DollarSign, Zap } from "lucide-react"
-import { RewardsCalculator } from "@/components/rewards-calculator"
 import { useStakingContract } from "@/hooks/use-staking-contract"
 import { useState, useEffect } from "react"
+import Footer from "@/components/footer"
 
 export default function HomePage() {
   const { isConnected } = useAccount()
-  const chainId = useChainId()
   const [stakingData, setStakingData] = useState({
     totalStaked: "0.00",
     apy: 12.5,
@@ -45,6 +44,22 @@ export default function HomePage() {
       minStake: "0.01",
     },
   ]
+
+  // Helper function to get dynamic grid classes based on pool count
+  const getGridClasses = (poolCount: number): string => {
+    if (poolCount === 1) {
+      return "grid grid-cols-1 mx-auto gap-6"
+    } else if (poolCount === 2) {
+      return "grid grid-cols-1 lg:grid-cols-2 max-w-4xl mx-auto gap-6"
+    } else if (poolCount === 3) {
+      return "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
+    } else if (poolCount === 4) {
+      return "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6"
+    } else {
+      // For 5+ pools, use a responsive grid that shows up to 3 per row
+      return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+    }
+  }
 
   const stats = [
     {
@@ -135,7 +150,9 @@ export default function HomePage() {
                     <div className="text-4xl mb-4">🌊 ♦️ 🔷</div>
                     <h3 className="text-lg font-medium mb-2">1. Select Source Chain</h3>
                     <p className="text-sm text-muted-foreground">
-                      Choose which chain your ETH is currently on - Flow, Hedera, or Ethereum.
+                      Choose which chain your ETH is
+                      <br />
+                      Currently on - <span className="font-bold">Flow, Hedera, or Ethereum.</span>
                     </p>
                   </CardContent>
                 </Card>
@@ -163,18 +180,15 @@ export default function HomePage() {
             {/* Staking Pools */}
             <div>
               <h2 className="text-2xl font-bold mb-6">Available Staking Pools</h2>
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+              {/* Option 1: Tailwind classes approach */}
+              <div className={getGridClasses(stakingPools.length)}>
                 {stakingPools.map((pool) => (
                   <StakingCard key={pool.id} pool={pool} />
                 ))}
               </div>
             </div>
 
-            {/* Rewards Calculator Section */}
-            <div>
-              <h2 className="text-2xl font-bold mb-6">Rewards Calculator</h2>
-              <RewardsCalculator />
-            </div>
+
           </div>
         ) : (
           <Card className="max-w-2xl mx-auto">
@@ -190,6 +204,7 @@ export default function HomePage() {
           </Card>
         )}
       </main>
+      <Footer />
     </div>
   )
 }

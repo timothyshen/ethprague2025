@@ -253,6 +253,21 @@ export function StakingCard({ pool }: StakingCardProps) {
                           <div className="flex items-center space-x-2">
                             <span className="text-xl">{chain.logo}</span>
                             <span>{chain.name}</span>
+                            {chain.id === selectedSourceChain && (
+                              <div className="ml-2 text-xs text-muted-foreground">
+                                {chain.id === "ethereum" ? (
+                                  <span>
+                                    {balance ? `Balance: ${formatEther(balance.value)} ${balance.symbol}` : "Loading balance..."}
+                                  </span>
+                                ) : chain.id === "flow" ? (
+                                  <span>Flow balance will be retrieved when connected</span>
+                                ) : chain.id === "hedera" ? (
+                                  <span>Hedera balance will be retrieved when connected</span>
+                                ) : (
+                                  <span>Balance will be fetched when connected</span>
+                                )}
+                              </div>
+                            )}
                           </div>
                           <Badge variant="outline">Bridge Fee: {chain.fee}</Badge>
                         </Label>

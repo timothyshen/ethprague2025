@@ -1,18 +1,16 @@
 "use client"
 
 import { useAccount, useChainId, useSwitchChain } from "wagmi"
-import { base, optimism, polygon, mainnet } from "wagmi/chains"
+import { sepolia, baseSepolia, flowTestnet, hederaTestnet } from "wagmi/chains"
 import { Check, ChevronDown } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 
 const chains = [
-  { ...mainnet, logo: "🔷", name: "Ethereum" },
-  { id: 1001, name: "Flow", logo: "🌊" },
-  { id: 1002, name: "Hedera", logo: "♦️" },
-  { ...base, logo: "🔵" },
-  { ...optimism, logo: "🔴" },
-  { ...polygon, logo: "🟣" },
+  { ...sepolia, logo: "🔷", name: "Sepolia" },
+  { ...baseSepolia, logo: "🔵", name: "Base Sepolia" },
+  { ...flowTestnet, logo: "🌊", name: "Flow Testnet" },
+  { ...hederaTestnet, logo: "♦️", name: "Hedera Testnet" },
 ]
 
 export function ChainSelector() {

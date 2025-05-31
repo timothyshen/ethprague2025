@@ -20,7 +20,7 @@ export function useAnyStakeContract() {
     });
 
   const options = Options.newOptions()
-    .addExecutorLzReceiveOption(200000, 0)
+    .addExecutorLzReceiveOption(20000000, 0)
     .toHex()
     .toString();
 
@@ -55,7 +55,7 @@ export function useAnyStakeContract() {
       address: contractAddress as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "getDepositQuote",
-      args: [dstEid, _amount, composedAddress, options],
+      args: [40161, _amount, composedAddress, options],
     });
     return quote;
   };
@@ -71,7 +71,7 @@ export function useAnyStakeContract() {
       address: contractAddress as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "getWithdrawQuote",
-      args: [dstEid, _amount, composedAddress, options],
+      args: [40161, _amount, composedAddress, options],
     });
     return quote;
   };
@@ -95,12 +95,13 @@ export function useAnyStakeContract() {
       if (!contractAddress) {
         throw new Error(`Contract address not found for chain ID: ${chainId}`);
       }
+      console.log("deposit", _amount, dstEid, composedAddress, options);
       writeContract({
         address: contractAddress as `0x${string}`,
         abi: AnyStakeAbi,
         functionName: "deposit",
-        value: _amount + parseEther("0.01"),
-        args: [dstEid, _amount, composedAddress, options],
+        value: _amount + parseEther("2"),
+        args: [40161, _amount, composedAddress, options],
       });
 
       toast({
@@ -138,7 +139,7 @@ export function useAnyStakeContract() {
         address: contractAddress as `0x${string}`,
         abi: AnyStakeAbi,
         functionName: "withdraw",
-        args: [dstEid, _amount, composedAddress, options],
+        args: [40161, _amount, composedAddress, options],
       });
 
       toast({

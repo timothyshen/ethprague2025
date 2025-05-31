@@ -8,9 +8,9 @@ const Footer = () => {
             <div className="container mx-auto px-4">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <div>
-                        <h3 className="text-xl font-bold mb-4">About AnyStaking</h3>
+                        <h3 className="text-xl font-bold mb-4">About AnyStake</h3>
                         <p className="text-gray-400">
-                            AnyStaking is a cross-chain staking protocol that allows users to stake their ETH from any chain into our Ethereum staking pool.
+                            AnyStake is a cross-chain staking protocol that allows users to stake their ETH from any chain into our Ethereum staking pool.
                         </p>
                     </div>
                     <div>
@@ -24,13 +24,13 @@ const Footer = () => {
                     <div>
                         <h3 className="text-xl font-bold mb-4">Follow Us</h3>
                         <div className="flex space-x-4">
-                            <a href="https://x.com/AnyStaking" className="hover:text-gray-300">
+                            <a href="https://x.com/AnyStake" className="hover:text-gray-300">
                                 <TwitterIcon className="h-6 w-6" />
                             </a>
                         </div>
                     </div>
                 </div>
-                <p className="text-center text-gray-400 mt-8">&copy; 2025 AnyStaking. All rights reserved.</p>
+                <p className="text-center text-gray-400 mt-8">&copy; 2025 AnyStake. All rights reserved.</p>
             </div>
         </footer>
     )

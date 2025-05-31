@@ -44,12 +44,6 @@ contract AnyStake is OApp, OAppOptionsType3 {
         uint8 operation
     );
 
-    address public stakingAggregator;
-
-    function setStakingAggregator(address _stakingAggregator) external onlyOwner {
-        stakingAggregator = _stakingAggregator;
-    }
-
     /**
      * @notice Stakes tokens by locking them and sending a cross-chain composed message
      */
@@ -238,7 +232,7 @@ contract AnyStake is OApp, OAppOptionsType3 {
     /**
      * @notice Simple helper to find pending withdrawal
      */
-    function _findPendingWithdrawal(address _user, uint256 _amount) internal view returns (bytes32) {
+    function _findPendingWithdrawal(address _user, uint256 _amount) internal pure returns (bytes32) {
         // Simplified for hackathon - just find the first matching withdrawal
         // In production, this would need proper implementation
 

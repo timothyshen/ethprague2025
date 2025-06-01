@@ -61,59 +61,76 @@ export default function HomePage() {
       chainId: number
     }> = []
 
-    // Create pools from each chain's data
+    // Create pools from Flow and Hedera chains (where users can stake)
     Object.entries(chainBalances).forEach(([chainKey, chainData]) => {
-      // Add pools from this chain
-      chainData.pools.forEach((pool) => {
-        pools.push({
-          id: `${chainKey}-${pool.id}`,
-          name: `${pool.name} (${chainData.chainName})`,
-          token: "ETH",
-          apy: pool.apy,
-          totalStaked: pool.totalStaked,
-          userStaked: chainData.userStakedBalance,
-          lockPeriod: 30,
-          minStake: "0.001",
-          chainName: chainData.chainName,
-          chainId: chainData.chainId,
+      // Only Flow and Hedera have staking pools
+      if (chainKey === 'flow' || chainKey === 'hedera') {
+        // Add pools from this staking chain
+        chainData.pools.forEach((pool) => {
+          pools.push({
+            id: `${chainKey}-${pool.id}`,
+            name: `${pool.name}`,
+            token: "ETH",
+            apy: pool.apy,
+            totalStaked: pool.totalStaked,
+            userStaked: chainData.userStakedBalance,
+            lockPeriod: 30,
+            minStake: "0.001",
+            chainName: chainData.chainName,
+            chainId: chainData.chainId,
+          })
         })
-      })
 
-      // If no pools exist for this chain, create a default one
-      if (chainData.pools.length === 0 && parseFloat(chainData.totalPoolBalance) > 0) {
-        pools.push({
-          id: `${chainKey}-default`,
-          name: `ETH Staking Pool (${chainData.chainName})`,
-          token: "ETH",
-          apy: 12.5, // Default APY
-          totalStaked: chainData.totalPoolBalance,
-          userStaked: chainData.userStakedBalance,
-          lockPeriod: 30,
-          minStake: "0.001",
-          chainName: chainData.chainName,
-          chainId: chainData.chainId,
-        })
+        // If no pools exist for this staking chain, create a default one
+        if (chainData.pools.length === 0 && parseFloat(chainData.totalPoolBalance) > 0) {
+          pools.push({
+            id: `${chainKey}-default`,
+            name: `ETH Staking Pool (${chainData.chainName})`,
+            token: "ETH",
+            apy: chainKey === 'flow' ? 6.1 : 7.3, // Different APYs for Flow vs Hedera
+            totalStaked: chainData.totalPoolBalance,
+            userStaked: chainData.userStakedBalance,
+            lockPeriod: 30,
+            minStake: "0.001",
+            chainName: chainData.chainName,
+            chainId: chainData.chainId,
+          })
+        }
       }
     })
 
-    // If no pools at all, show a default ETH pool
+    // If no staking pools at all, show default pools for Flow and Hedera
     if (pools.length === 0) {
-      pools.push({
-        id: "eth-default",
-        name: "ETH Staking Pool",
-        token: "ETH",
-        apy: stakingData.apy || 12.5,
-        totalStaked: stakingData.totalStaked || "0.00",
-        userStaked: stakingData.stakedAmount || "0.00",
-        lockPeriod: 30,
-        minStake: "0.001",
-        chainName: "Ethereum",
-        chainId: 11155111,
-      })
+      pools.push(
+        {
+          id: "flow-default",
+          name: "Flow ETH Staking Pool",
+          token: "ETH",
+          apy: 6.1,
+          totalStaked: "0.00",
+          userStaked: "0.00",
+          lockPeriod: 30,
+          minStake: "0.001",
+          chainName: "Flow Testnet",
+          chainId: 545,
+        },
+        {
+          id: "hedera-default",
+          name: "Hedera ETH Staking Pool",
+          token: "ETH",
+          apy: 7.3,
+          totalStaked: "0.00",
+          userStaked: "0.00",
+          lockPeriod: 30,
+          minStake: "0.001",
+          chainName: "Hedera Testnet",
+          chainId: 296,
+        }
+      )
     }
 
     return pools
-  }, [chainBalances, stakingData])
+  }, [chainBalances])
 
   // Helper function to get dynamic grid classes based on pool count
   const getGridClasses = (poolCount: number): string => {

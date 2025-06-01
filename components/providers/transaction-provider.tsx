@@ -44,6 +44,10 @@ interface TransactionState {
     updateTransactionHash: (id: string, hash: string) => void
     clearCompletedTransactions: () => void
     getTransaction: (id: string) => Transaction | undefined
+
+    // Notification callback for status changes
+    onStatusChange?: (transaction: Transaction, newStatus: TransactionStatus) => void
+    setStatusChangeCallback: (callback: (transaction: Transaction, newStatus: TransactionStatus) => void) => void
 }
 
 // Helper function to generate transaction ID
@@ -82,7 +86,8 @@ export function getEstimatedCompletionTime(transaction: Transaction): string {
 // Initial state
 const initialState = {
     transactions: [],
-    isLoading: false
+    isLoading: false,
+    onStatusChange: undefined as ((transaction: Transaction, newStatus: TransactionStatus) => void) | undefined
 }
 
 export const useTransactionStore = create<TransactionState>()(
@@ -123,6 +128,7 @@ export const useTransactionStore = create<TransactionState>()(
             set((state) => {
                 const transaction = state.transactions.find(tx => tx.id === id)
                 if (transaction) {
+                    const oldStatus = transaction.status
                     transaction.status = status
 
                     const now = Date.now()
@@ -137,6 +143,11 @@ export const useTransactionStore = create<TransactionState>()(
                     }
                     if (status === "failed" && error) {
                         transaction.error = error
+                    }
+
+                    // Call status change callback if available
+                    if (state.onStatusChange && oldStatus !== status) {
+                        state.onStatusChange(transaction, status)
                     }
                 }
             })
@@ -161,6 +172,12 @@ export const useTransactionStore = create<TransactionState>()(
 
         getTransaction: (id) => {
             return get().transactions.find(tx => tx.id === id)
+        },
+
+        setStatusChangeCallback: (callback) => {
+            set((state) => {
+                state.onStatusChange = callback
+            })
         }
     }))
 )
@@ -189,7 +206,8 @@ export const useTransactions = () => {
         updateTransactionStatus: store.updateTransactionStatus,
         updateTransactionHash: store.updateTransactionHash,
         clearCompletedTransactions: store.clearCompletedTransactions,
-        getTransaction: store.getTransaction
+        getTransaction: store.getTransaction,
+        setStatusChangeCallback: store.setStatusChangeCallback
     }
 }
 

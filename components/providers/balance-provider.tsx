@@ -4,8 +4,11 @@ import { create } from 'zustand'
 import { immer } from 'zustand/middleware/immer'
 import { useMemo } from 'react'
 
-// Define chain types
-export type SupportedChain = 'ethereum'
+// Define chain types - all three chains are supported
+export type SupportedChain = 'ethereum' | 'flow' | 'hedera'
+
+// Define staking chains - only Flow and Hedera allow user staking
+export type StakingChain = 'flow' | 'hedera'
 
 // Chain configuration
 export const CHAIN_CONFIG = {
@@ -14,16 +17,17 @@ export const CHAIN_CONFIG = {
     hedera: { id: 296, name: 'Hedera Testnet' }
 } as const
 
-// Pool types
+// Pool types - pools only exist on Flow and Hedera (where users can stake)
 export type Pool = {
     id: string
     name: string
     apy: number
     totalStaked: string
     totalStakedFormatted: string
+    stakingChain: StakingChain // Which chain this pool operates on
 }
 
-// Chain balance type
+// Chain balance type - tracks balances for all chains
 export type ChainBalance = {
     chainId: number
     chainName: string
@@ -31,12 +35,12 @@ export type ChainBalance = {
     totalPoolBalanceFormatted: string
     userStakedBalance: string
     userStakedBalanceFormatted: string
-    pools: Pool[]
+    pools: Pool[] // Flow and Hedera have pools, Ethereum aggregates from them
 }
 
 // Balance state interface
 interface BalanceState {
-    // Total balance for ETH pool across all chains
+    // Total balance for ETH pool across all chains (aggregated in Ethereum)
     totalEthPoolBalance: string
     totalEthPoolBalanceFormatted: string
 
@@ -102,6 +106,8 @@ const initialState = {
     totalEthPoolBalanceFormatted: '0.00',
     chainBalances: {
         ethereum: { ...initialChainBalance, chainId: CHAIN_CONFIG.ethereum.id, chainName: CHAIN_CONFIG.ethereum.name },
+        flow: { ...initialChainBalance, chainId: CHAIN_CONFIG.flow.id, chainName: CHAIN_CONFIG.flow.name },
+        hedera: { ...initialChainBalance, chainId: CHAIN_CONFIG.hedera.id, chainName: CHAIN_CONFIG.hedera.name }
     },
     userTotalBalance: '0',
     userTotalBalanceFormatted: '0.00',
@@ -180,15 +186,41 @@ export const useBalanceStore = create<BalanceState>()(
                 // In a real implementation, you would call your actual APIs here
 
                 // Mock data for demonstration
+                // Flow and Hedera have staking pools, Ethereum aggregates everything
                 const mockBalances: Record<SupportedChain, Partial<ChainBalance>> = {
                     ethereum: {
+                        totalPoolBalance: '50', // Aggregated from Flow and Hedera
+                        userStakedBalance: '25', // Aggregated user balance
+                        pools: [] // Ethereum doesn't have direct staking pools
+                    },
+                    flow: {
                         totalPoolBalance: '30',
-                        userStakedBalance: '20',
+                        userStakedBalance: '15',
                         pools: [
-                            { id: 'flow-staking', name: 'Flow Pool', apy: 6.1, totalStaked: '10', totalStakedFormatted: '10' },
-                            { id: 'hedera-staking', name: 'Hedera Pool', apy: 7.3, totalStaked: '20', totalStakedFormatted: '20' },
+                            {
+                                id: 'flow-staking',
+                                name: 'Flow Staking Pool',
+                                apy: 6.1,
+                                totalStaked: '30',
+                                totalStakedFormatted: '30.0000',
+                                stakingChain: 'flow'
+                            }
                         ]
                     },
+                    hedera: {
+                        totalPoolBalance: '20',
+                        userStakedBalance: '10',
+                        pools: [
+                            {
+                                id: 'hedera-staking',
+                                name: 'Hedera Staking Pool',
+                                apy: 7.3,
+                                totalStaked: '20',
+                                totalStakedFormatted: '20.0000',
+                                stakingChain: 'hedera'
+                            }
+                        ]
+                    }
                 }
 
                 // Simulate network delay

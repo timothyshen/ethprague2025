@@ -1,8 +1,8 @@
 "use client"
 
-import { useState } from "react"
-import { useAccount, useBalance } from "wagmi"
-import { formatEther, parseEther } from "viem"
+import { useState, useEffect } from "react"
+import { useAccount, useBalance, useChainId } from "wagmi"
+import { parseEther } from "viem"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -13,6 +13,8 @@ import { useAnyStakeContract } from "@/hooks/use-anyStake-contract"
 import { StakingPool } from "./types"
 import { StakeTab } from "./StakeTab"
 import { useNotification, ChainInfo } from "@/components/providers/notification-provider"
+import { useTransactions } from "@/components/providers/transaction-provider"
+import { useBalance as useBalanceProvider } from "@/components/providers/balance-provider"
 import { sepolia } from "viem/chains"
 
 // Destination chain for unstaking is always Ethereum
@@ -35,18 +37,46 @@ interface StakingTabsProps {
 
 export function StakingTabs({ pool }: StakingTabsProps) {
     const [unstakeAmount, setUnstakeAmount] = useState("")
+    const [currentTransactionId, setCurrentTransactionId] = useState<string | null>(null)
+
     const { address } = useAccount()
+    const chainId = useChainId()
+
     const { toast } = useToast()
-    const { data: balance } = useBalance({ address })
-    const { isPending: isStakingPending, isConfirming: isStakingConfirming } = useAnyStakeContract()
+    const { withdraw, hash, isPending: isStakingPending, isConfirming: isStakingConfirming } = useAnyStakeContract()
     const { permission, sendStakingNotification } = useNotification()
+    const { addTransaction, updateTransactionHash, updateTransactionStatus } = useTransactions()
+    const { setUserStakedBalance } = useBalanceProvider()
 
     const isStaking = isStakingPending || isStakingConfirming
+
+    // Update transaction hash when it becomes available
+    useEffect(() => {
+        if (hash && currentTransactionId) {
+            updateTransactionHash(currentTransactionId, hash)
+            setCurrentTransactionId(null) // Clear the ID after updating
+        }
+    }, [hash, currentTransactionId, updateTransactionHash])
 
     const handleUnstake = async () => {
         if (!unstakeAmount || !address) return
 
         try {
+            // Create transaction in the transaction provider
+            const transactionId = addTransaction({
+                hash: `0x${Math.random().toString(16).substr(2, 64)}`, // Temporary hash, will be updated
+                type: "withdraw",
+                chainId: sepolia.id,
+                chainName: "Ethereum",
+                amount: unstakeAmount,
+                amountFormatted: `${unstakeAmount}`,
+                apy: pool.apy,
+                status: "pending"
+            })
+
+            // Store transaction ID to update hash later
+            setCurrentTransactionId(transactionId)
+
             // Send notification for unstaking initiated
             if (permission === "granted") {
                 sendStakingNotification(
@@ -58,14 +88,18 @@ export function StakingTabs({ pool }: StakingTabsProps) {
                 )
             }
 
+            // Call the withdraw function
+            await withdraw(sepolia.id, parseEther(unstakeAmount))
+
             toast({
                 title: "Unstaking Initiated",
                 description: `Unstaking ${unstakeAmount} ${pool.token}`,
             })
 
-            // Mock a successful unstake completion after some time (in a real app, this would be triggered by chain events)
-            if (permission === "granted") {
-                setTimeout(() => {
+            // Set up the unstaking progression flow
+            // After 2 seconds: unstake-confirmed notification
+            setTimeout(() => {
+                if (permission === "granted") {
                     sendStakingNotification(
                         "unstake-confirmed",
                         unstakeAmount,
@@ -73,9 +107,30 @@ export function StakingTabs({ pool }: StakingTabsProps) {
                         sourceChain,
                         destinationChain
                     )
-                }, 5000)
+                }
+            }, 2000)
 
-                setTimeout(() => {
+            // After 2 minutes 25 seconds: unstake-completed notification and balance update
+            setTimeout(() => {
+                // Update balance provider - reduce user staked amount
+                const currentUserStaked = parseFloat(pool.userStaked)
+                const unstakeAmountNum = parseFloat(unstakeAmount)
+                const newUserStaked = Math.max(0, currentUserStaked - unstakeAmountNum).toString()
+
+                // Update the appropriate staking chain balance, not Ethereum directly
+                // Since users can only stake on Flow or Hedera, we need to determine which chain this pool is from
+                // Map chainId to SupportedChain
+                const getChainFromId = (id: number): 'flow' | 'hedera' => {
+                    if (id === 545) return 'flow'
+                    if (id === 296) return 'hedera'
+                    return 'flow' // Default fallback
+                }
+
+                const stakingChain = getChainFromId(chainId)
+                setUserStakedBalance(stakingChain, newUserStaked)
+
+                // Send completion notification
+                if (permission === "granted") {
                     sendStakingNotification(
                         "unstake-completed",
                         unstakeAmount,
@@ -83,15 +138,23 @@ export function StakingTabs({ pool }: StakingTabsProps) {
                         sourceChain,
                         destinationChain
                     )
-                }, 10000)
-            }
+                }
 
+                toast({
+                    title: "Unstaking Completed",
+                    description: `Successfully unstaked ${unstakeAmount} ${pool.token}`,
+                })
+            }, 145000) // 2 minutes 25 seconds
+
+            // Reset form
             setUnstakeAmount("")
-        } catch (error) {
-            console.error("Unstaking error:", error)
+
+        } catch (error: any) {
+            console.error('Unstaking error:', error)
+
             toast({
                 title: "Unstaking Failed",
-                description: "An error occurred while unstaking",
+                description: error?.message || "Failed to initiate unstaking transaction",
                 variant: "destructive",
             })
         }

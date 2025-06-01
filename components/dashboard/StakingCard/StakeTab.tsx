@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAccount, useBalance } from "wagmi"
 import { formatEther, parseEther } from "viem"
 import { Button } from "@/components/ui/button"
@@ -14,6 +14,8 @@ import { sepolia, flowTestnet, hederaTestnet } from "viem/chains"
 import { useAnyStakeContract } from "@/hooks/use-anyStake-contract"
 import { StakingPool } from "./types"
 import { useNotification, ChainInfo } from "@/components/providers/notification-provider"
+import { useTransactions } from "@/components/providers/transaction-provider"
+import { useBalance as useBalanceProvider } from "@/components/providers/balance-provider"
 
 // Define supported source chains for cross-chain staking
 const sourceChains = [
@@ -29,6 +31,12 @@ const destinationChain: ChainInfo = {
     logo: "🔷"
 }
 
+// Helper to get chain name from ID
+const getChainName = (chainId: number): string => {
+    const chain = sourceChains.find(c => c.id === chainId)
+    return chain?.name || "Unknown Chain"
+}
+
 interface StakeTabProps {
     pool: StakingPool
 }
@@ -37,16 +45,27 @@ export function StakeTab({ pool }: StakeTabProps) {
     const [stakeAmount, setStakeAmount] = useState("")
     const [selectedSourceChain, setSelectedSourceChain] = useState<number>(sourceChains[0].id)
     const [stakeStep, setStakeStep] = useState<"source" | "amount" | "confirm">("source")
+    const [currentTransactionId, setCurrentTransactionId] = useState<string | null>(null)
 
     const { address } = useAccount()
     const { toast } = useToast()
     const { data: balance } = useBalance({ address })
     const balances = useChainBalance()
-    const { deposit, isPending: isStakingPending, isConfirming: isStakingConfirming } = useAnyStakeContract()
+    const { deposit, hash, isPending: isStakingPending, isConfirming: isStakingConfirming } = useAnyStakeContract()
     const { permission, sendStakingNotification } = useNotification()
+    const { addTransaction, updateTransactionHash } = useTransactions()
+    const { setUserStakedBalance } = useBalanceProvider()
 
     const isStaking = isStakingPending || isStakingConfirming
     const selectedChainInfo = sourceChains.find((chain) => chain.id === selectedSourceChain)
+
+    // Update transaction hash when it becomes available
+    useEffect(() => {
+        if (hash && currentTransactionId) {
+            updateTransactionHash(currentTransactionId, hash)
+            setCurrentTransactionId(null) // Clear the ID after updating
+        }
+    }, [hash, currentTransactionId, updateTransactionHash])
 
     const handleSourceSelectionNext = async () => {
         if (!selectedSourceChain) {
@@ -85,6 +104,21 @@ export function StakeTab({ pool }: StakeTabProps) {
         if (!stakeAmount || !address || !selectedSourceChain || !selectedChainInfo) return
 
         try {
+            // Create transaction in the transaction provider
+            const transactionId = addTransaction({
+                hash: `0x${Math.random().toString(16).substr(2, 64)}`, // Temporary hash, will be updated
+                type: "deposit",
+                chainId: selectedSourceChain,
+                chainName: getChainName(selectedSourceChain),
+                amount: stakeAmount,
+                amountFormatted: `${stakeAmount}`,
+                apy: pool.apy,
+                status: "pending"
+            })
+
+            // Store transaction ID to update hash later
+            setCurrentTransactionId(transactionId)
+
             // Send notification for staking initiated
             if (permission === "granted") {
                 const sourceChainInfo: ChainInfo = {
@@ -103,7 +137,7 @@ export function StakeTab({ pool }: StakeTabProps) {
             }
 
             // Call the deposit function
-            deposit(selectedSourceChain, parseEther(stakeAmount || "0"))
+            await deposit(selectedSourceChain, parseEther(stakeAmount || "0"))
 
             // Show toast notification
             toast({
@@ -111,25 +145,40 @@ export function StakeTab({ pool }: StakeTabProps) {
                 description: `Staking ${stakeAmount} ${pool.token} from ${selectedChainInfo?.name}`,
             })
 
-            // Mock a successful stake completion after some time (in a real app, this would be triggered by chain events)
-            if (permission === "granted") {
-                setTimeout(() => {
-                    const sourceChainInfo: ChainInfo = {
-                        id: selectedSourceChain,
-                        name: selectedChainInfo.name,
-                        logo: selectedChainInfo.logo
-                    }
+            // Set up the staking progression flow
+            // After 2 seconds: stake-confirmed notification
 
-                    sendStakingNotification(
-                        "stake-confirmed",
-                        stakeAmount,
-                        pool.token,
-                        sourceChainInfo,
-                        destinationChain
-                    )
-                }, 5000)
+            if (permission === "granted" && isStakingConfirming) {
+                const sourceChainInfo: ChainInfo = {
+                    id: selectedSourceChain,
+                    name: selectedChainInfo.name,
+                    logo: selectedChainInfo.logo
+                }
 
-                setTimeout(() => {
+                sendStakingNotification(
+                    "stake-confirmed",
+                    stakeAmount,
+                    pool.token,
+                    sourceChainInfo,
+                    destinationChain
+                )
+            }
+
+
+            // After 2 minutes 25 seconds: stake-completed notification and balance update
+            setTimeout(() => {
+                // Update balance provider - increase user staked amount
+                const currentUserStaked = parseFloat(pool.userStaked || "0")
+                const stakeAmountNum = parseFloat(stakeAmount)
+                const newUserStaked = (currentUserStaked + stakeAmountNum).toString()
+
+                // Update the staking chain balance (Flow or Hedera), not Ethereum directly
+                // Determine the staking chain from the selected source chain
+                const stakingChain: 'flow' | 'hedera' = selectedSourceChain === 545 ? 'flow' : 'hedera'
+                setUserStakedBalance(stakingChain, newUserStaked)
+
+                // Send completion notification
+                if (permission === "granted") {
                     const sourceChainInfo: ChainInfo = {
                         id: selectedSourceChain,
                         name: selectedChainInfo.name,
@@ -143,16 +192,24 @@ export function StakeTab({ pool }: StakeTabProps) {
                         sourceChainInfo,
                         destinationChain
                     )
-                }, 10000)
-            }
+                }
 
+                toast({
+                    title: "Staking Completed",
+                    description: `Successfully staked ${stakeAmount} ${pool.token}`,
+                })
+            }, 145000) // 2 minutes 25 seconds
+
+            // Reset form
             setStakeAmount("")
             setStakeStep("source")
-        } catch (error) {
-            console.error("Staking error:", error)
+
+        } catch (error: any) {
+            console.error('Staking error:', error)
+
             toast({
                 title: "Staking Failed",
-                description: "An error occurred while staking",
+                description: error?.message || "Failed to initiate staking transaction",
                 variant: "destructive",
             })
         }

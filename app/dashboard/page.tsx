@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useAccount } from "wagmi"
 import { Navbar } from "@/components/layout/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,11 +9,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Gift } from "lucide-react"
 import { ConnectKitButton } from "connectkit"
 import { StakingAnalytics } from "@/components/DataAnalytics/staking-analytics"
-import { StakingTransactionTracker } from "@/components/DataAnalytics/stake-transaction-tracker"
 import { useToast } from "@/hooks/use-toast"
 import { TransactionMonitor } from "@/components/DataAnalytics/transaction-monitor"
-import { useAggregateAllBalance } from "@/hooks/use-aggregate-all-balance"
-import { useStakingAggregatorContract } from "@/hooks/use-stakingAggregator-contract"
 import { useAnyStakeContract } from "@/hooks/use-anyStake-contract"
 import { flowTestnet, hederaTestnet } from "viem/chains"
 import {
@@ -77,19 +74,7 @@ export default function DashboardPage() {
   const { toast } = useToast()
 
   const isPending = false
-  const { totalBalance, positions, totalChains, isLoading: isBalanceLoading } = useAggregateAllBalance()
-  const { totalStakedData } = useStakingAggregatorContract()
   const { withdraw, isPending: isWithdrawPending, isConfirming: isWithdrawConfirming } = useAnyStakeContract()
-
-  useEffect(() => {
-    const getTotalStaked = async () => {
-      const totalStaked = await totalStakedData()
-      console.log("totalStaked", totalStaked)
-    }
-    getTotalStaked().then((totalStaked) => {
-      console.log("totalStaked", totalStaked)
-    })
-  }, [totalStakedData])
 
   const stakingPositions: StakingPosition[] = [
     {
@@ -98,8 +83,8 @@ export default function DashboardPage() {
       sourceChain: "Ethereum",
       chainLogo: "🔷",
       token: "ETH",
-      amount: totalBalance,
-      value: `$${(Number.parseFloat(totalBalance || "0") * 1700).toFixed(2)}`,
+      amount: "0",
+      value: `$${(Number.parseFloat("0") * 1700).toFixed(2)}`,
       apy: 12.5,
       rewards: "10.00",
       lockEnd: "2024-02-15",
@@ -187,10 +172,10 @@ export default function DashboardPage() {
 
         {/* Overview Cards */}
         <StakingOverviewCards
-          totalBalance={totalBalance}
+          totalBalance={"0"}
           totalRewards={totalRewards}
           totalPositions={stakingPositions.length}
-          totalChains={totalChains}
+          totalChains={1}
         />
 
         {/* Transaction Monitor */}
@@ -198,61 +183,103 @@ export default function DashboardPage() {
           <TransactionMonitor />
         </div>
 
-        {/* Staking Transaction Tracker */}
-        <div className="mb-8">
-          <StakingTransactionTracker />
-        </div>
-
-        <Tabs defaultValue="positions" className="space-y-6">
+        <Tabs defaultValue="analytics" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="positions">Staking Positions</TabsTrigger>
             <TabsTrigger value="analytics">Analytics</TabsTrigger>
+            <TabsTrigger value="rewards">
+              <Gift className="mr-2 h-4 w-4" />
+              Rewards
+            </TabsTrigger>
+            <TabsTrigger value="positions">Staking Positions</TabsTrigger>
             <TabsTrigger value="transactions">Transaction History</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="positions" className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-semibold">Your Staking Positions</h2>
-              <Button disabled={isPending}>
-                <Gift className="mr-2 h-4 w-4" />
-                {isPending ? "Claiming..." : "Claim All Rewards"}
-              </Button>
-            </div>
+          <TabsContent value="analytics" className="space-y-6">
+            <StakingAnalytics />
+            {/* <StakingTransactionTracker /> */}
+          </TabsContent>
 
+          <TabsContent value="rewards" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Claim Rewards</CardTitle>
+                <CardDescription>
+                  Claim your accumulated rewards from the Ethereum staking pool
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="text-center space-y-2">
+                    <p className="text-2xl font-bold text-green-600">10.00 ETH</p>
+                    <p className="text-muted-foreground">Available Rewards</p>
+                  </div>
+                  <Button className="w-full" disabled={isPending}>
+                    {isPending ? "Claiming..." : "Claim Rewards"}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="positions" className="space-y-6">
             <div className="grid gap-6">
-              {stakingPositions.map((position) => (
+              {/* {stakingPositions.map((position) => (
                 <StakingPositionCard
                   key={position.id}
                   position={position}
-                  chainPositions={chainPositions}
-                  totalBalance={totalBalance}
-                  totalChains={totalChains}
-                  onUnstake={handlePositionUnstake}
+                  onUnstake={() => handlePositionUnstake(position, flowTestnet.id)}
                 />
-              ))}
+              ))} */}
+
+              {/* {chainPositions.map((position) => (
+                <StakingPositionCard
+                  key={position.chainId}
+                  position={{
+                    id: position.chainId.toString(),
+                    pool: `${position.sourceChain} Staking Pool`,
+                    sourceChain: position.sourceChain,
+                    chainLogo: position.sourceChain === "Flow" ? "🌊" : "♦️",
+                    token: position.token,
+                    amount: position.amount,
+                    value: `$${(Number.parseFloat(position.amount) * 1700).toFixed(2)}`,
+                    apy: position.apy,
+                    rewards: position.rewards,
+                    lockEnd: "2024-02-15",
+                    status: position.status,
+                  }}
+                  onUnstake={() => handlePositionUnstake({
+                    id: position.chainId.toString(),
+                    pool: `${position.sourceChain} Staking Pool`,
+                    sourceChain: position.sourceChain,
+                    chainLogo: position.sourceChain === "Flow" ? "🌊" : "♦️",
+                    token: position.token,
+                    amount: position.amount,
+                    value: `$${(Number.parseFloat(position.amount) * 1700).toFixed(2)}`,
+                    apy: position.apy,
+                    rewards: position.rewards,
+                    lockEnd: "2024-02-15",
+                    status: position.status,
+                  }, position.chainId)}
+                />
+              ))} */}
             </div>
           </TabsContent>
 
-          <TabsContent value="analytics" className="space-y-6">
-            <StakingAnalytics />
-          </TabsContent>
-
           <TabsContent value="transactions" className="space-y-6">
-            <h2 className="text-xl font-semibold">Transaction History</h2>
             <TransactionHistoryList transactions={transactions} />
           </TabsContent>
         </Tabs>
-      </main>
 
-      <UnstakeDialog
-        open={unstakeDialogOpen}
-        onOpenChange={setUnstakeDialogOpen}
-        selectedPosition={selectedPosition}
-        destinationChain={destinationChain}
-        setDestinationChain={setDestinationChain}
-        totalBalance={totalBalance}
-        onUnstake={handleUnstake}
-      />
+        {/* <UnstakeDialog
+          open={unstakeDialogOpen}
+          onOpenChange={setUnstakeDialogOpen}
+          position={selectedPosition?.position || null}
+          destinationChain={destinationChain}
+          onDestinationChainChange={setDestinationChain}
+          onUnstake={handleUnstake}
+          isLoading={isWithdrawPending || isWithdrawConfirming}
+        /> */}
+      </main>
     </div>
   )
 }

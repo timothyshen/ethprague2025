@@ -4,7 +4,6 @@ import { useAccount } from "wagmi"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { TrendingUp } from "lucide-react"
-import { useStakingAggregatorContract } from "@/hooks/use-stakingAggregator-contract"
 import { StakingTabs } from "./StakingTabs"
 import { StakingPool } from "./types"
 
@@ -14,16 +13,13 @@ interface StakingCardProps {
 
 export function StakingCard({ pool }: StakingCardProps) {
     const { address } = useAccount()
-    const { totalStakedData, stakedAmountData } = useStakingAggregatorContract()
 
-    // Update pool data with real contract data
+    // Update pool data with static values (since we removed the aggregator contract)
     const updatedPool = {
         ...pool,
-        totalStaked: totalStakedData ? (Number(totalStakedData) / 1e18).toFixed(4) : "0.0000",
+        totalStaked: "1250.5432", // Static value for now
         apy: 10,
-        userStaked: address && stakedAmountData
-            ? (Number(stakedAmountData(address as `0x${string}`)) / 1e18).toFixed(4)
-            : "5.00",
+        userStaked: address ? "5.00" : "0.00",
     }
 
     return (

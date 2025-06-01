@@ -21,12 +21,6 @@ export default function HomePage() {
     pendingRewards: null as string | null,
   })
 
-  const {
-    totalBalance,
-    positions,
-    totalChains,
-    isLoading: isBalanceLoading
-  } = useAggregateAllBalance()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -52,7 +46,7 @@ export default function HomePage() {
     ];
 
     return pools;
-  }, [stakingData, positions]);
+  }, [stakingData]);
 
   // Helper function to get dynamic grid classes based on pool count
   const getGridClasses = (poolCount: number): string => {
@@ -73,7 +67,7 @@ export default function HomePage() {
   const stats = [
     {
       title: "Total Value Locked",
-      value: isBalanceLoading ? "Loading..." : `$${(parseFloat(totalBalance) * 1700).toFixed(2)}K`, // ETH price approximation
+      value: "0",
       icon: DollarSign,
       change: "+12.3%",
     },
@@ -81,7 +75,7 @@ export default function HomePage() {
       title: "Active Positions",
       value: 100,
       icon: Users,
-      change: `${totalChains} chains`,
+      change: `3 chains`,
     },
     {
       title: "Average APY",
@@ -91,7 +85,7 @@ export default function HomePage() {
     },
     {
       title: "Cross-Chain Balance",
-      value: isBalanceLoading ? "Loading..." : `${parseFloat(totalBalance).toFixed(4)} ETH`,
+      value: "0",
       icon: Zap,
       change: "Aggregated",
     },

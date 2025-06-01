@@ -11,6 +11,11 @@ import { useToast } from "@/hooks/use-toast";
 import { Options } from "@layerzerolabs/lz-v2-utilities";
 import { parseEther } from "viem";
 
+const options = Options.newOptions()
+  .addExecutorLzReceiveOption(20000000, 0)
+  .toHex()
+  .toString();
+
 export function useAnyStakeContract() {
   const { toast } = useToast();
   const { writeContract, data: hash, isPending } = useWriteContract();
@@ -18,61 +23,6 @@ export function useAnyStakeContract() {
     useWaitForTransactionReceipt({
       hash,
     });
-
-  const options = Options.newOptions()
-    .addExecutorLzReceiveOption(20000000, 0)
-    .toHex()
-    .toString();
-
-  const lockedBalancesData = (chainId: number, address: `0x${string}`) => {
-    const lockedBalances = useReadContract({
-      address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
-        .anyStake as `0x${string}`,
-      abi: AnyStakeAbi,
-      functionName: "lockedBalances",
-      args: [address],
-    });
-    return lockedBalances;
-  };
-
-  const pendingWithdrawalData = (chainId: number, guid: `0x${string}`) => {
-    const pendingWithdrawal = useReadContract({
-      address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
-        .anyStake as `0x${string}`,
-      abi: AnyStakeAbi,
-      functionName: "getPendingWithdrawal",
-      args: [guid],
-    });
-    return pendingWithdrawal;
-  };
-
-  const depositQuoteData = (chainId: number, _amount: bigint) => {
-    const contractAddress =
-      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
-    const composedAddress =
-      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.stakeAggregator;
-    const quote = useReadContract({
-      address: contractAddress as `0x${string}`,
-      abi: AnyStakeAbi,
-      functionName: "getDepositQuote",
-      args: [40161, _amount, composedAddress, options],
-    });
-    return quote;
-  };
-
-  const withdrawQuoteData = (chainId: number, _amount: bigint) => {
-    const contractAddress =
-      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
-    const composedAddress =
-      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.stakeAggregator;
-    const quote = useReadContract({
-      address: contractAddress as `0x${string}`,
-      abi: AnyStakeAbi,
-      functionName: "getWithdrawQuote",
-      args: [40161, _amount, composedAddress, options],
-    });
-    return quote;
-  };
 
   const typeEnum = {
     DEPOSIT: 1,
@@ -148,12 +98,6 @@ export function useAnyStakeContract() {
   };
 
   return {
-    // Read data
-    lockedBalancesData,
-    pendingWithdrawalData,
-    depositQuoteData,
-    withdrawQuoteData,
-
     // Write functions
     deposit,
     withdraw,

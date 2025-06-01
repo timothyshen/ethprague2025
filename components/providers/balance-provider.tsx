@@ -68,7 +68,7 @@ function formatEthAmount(amount: string): string {
     const num = parseFloat(amount)
     if (num === 0) return '0.00'
     if (num < 0.01) return '<0.01'
-    return num.toFixed(4)
+    return num.toFixed(2)
 }
 
 // Helper function to calculate total balance
@@ -202,7 +202,7 @@ export const useBalanceStore = create<BalanceState>()(
                                 name: 'Flow Staking Pool',
                                 apy: 6.1,
                                 totalStaked: '30',
-                                totalStakedFormatted: '30.0000',
+                                totalStakedFormatted: '30',
                                 stakingChain: 'flow'
                             }
                         ]
@@ -216,7 +216,7 @@ export const useBalanceStore = create<BalanceState>()(
                                 name: 'Hedera Staking Pool',
                                 apy: 7.3,
                                 totalStaked: '20',
-                                totalStakedFormatted: '20.0000',
+                                totalStakedFormatted: '20',
                                 stakingChain: 'hedera'
                             }
                         ]

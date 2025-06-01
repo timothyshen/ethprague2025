@@ -126,7 +126,6 @@ export function StakingTabs({ pool }: StakingTabsProps) {
                     return 'flow' // Default fallback
                 }
 
-                const stakingChain = getChainFromId(chainId)
                 setUserStakedBalance(stakingChain, newUserStaked)
 
                 // Send completion notification

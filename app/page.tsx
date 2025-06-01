@@ -243,7 +243,7 @@ export default function HomePage() {
                     <div className="text-4xl mb-4">🔄</div>
                     <h3 className="text-lg font-medium mb-2">2. Bridge & Aggregate</h3>
                     <p className="text-sm text-muted-foreground">
-                      We securely bridge your ETH from any chain to our Ethereum staking pool.
+                      We securely Lock your ETH from any chain and aggregate it into a single Ethereum staking pool.
                     </p>
                   </CardContent>
                 </Card>

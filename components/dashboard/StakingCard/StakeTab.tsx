@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useAccount, useBalance } from "wagmi"
+import { useAccount, useBalance, useChainId, useSwitchChain } from "wagmi"
 import { formatEther, parseEther } from "viem"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { ArrowRight, Loader2 } from "lucide-react"
+import { ArrowRight, Loader2, AlertTriangle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { useChainBalance } from "@/hooks/use-chain-balance"
@@ -16,6 +16,7 @@ import { StakingPool } from "./types"
 import { useNotification, ChainInfo } from "@/components/providers/notification-provider"
 import { useTransactions } from "@/components/providers/transaction-provider"
 import { useBalance as useBalanceProvider } from "@/components/providers/balance-provider"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 // Define supported source chains for cross-chain staking
 const sourceChains = [
@@ -55,9 +56,15 @@ export function StakeTab({ pool }: StakeTabProps) {
     const { permission, sendStakingNotification } = useNotification()
     const { addTransaction, updateTransactionHash } = useTransactions()
     const { setUserStakedBalance } = useBalanceProvider()
+    const currentChainId = useChainId()
+    const { switchChain, isPending: isSwitchingChain } = useSwitchChain()
 
     const isStaking = isStakingPending || isStakingConfirming
     const selectedChainInfo = sourceChains.find((chain) => chain.id === selectedSourceChain)
+
+    // Check if user is on the correct chain
+    const isOnCorrectChain = currentChainId === selectedSourceChain
+    const needsChainSwitch = !isOnCorrectChain && selectedSourceChain
 
     // Update transaction hash when it becomes available
     useEffect(() => {
@@ -102,6 +109,16 @@ export function StakeTab({ pool }: StakeTabProps) {
 
     const handleStake = async () => {
         if (!stakeAmount || !address || !selectedSourceChain || !selectedChainInfo) return
+
+        // Validate that user is on the correct chain
+        if (!isOnCorrectChain) {
+            toast({
+                title: "Wrong Chain",
+                description: `Please switch to ${selectedChainInfo.name} to stake from this chain`,
+                variant: "destructive",
+            })
+            return
+        }
 
         try {
             // Create transaction in the transaction provider
@@ -215,6 +232,25 @@ export function StakeTab({ pool }: StakeTabProps) {
         }
     }
 
+    const handleChainSwitch = async () => {
+        if (!selectedSourceChain) return
+
+        try {
+            await switchChain({ chainId: selectedSourceChain })
+            toast({
+                title: "Chain Switched",
+                description: `Successfully switched to ${selectedChainInfo?.name}`,
+            })
+        } catch (error: any) {
+            console.error('Chain switch error:', error)
+            toast({
+                title: "Chain Switch Failed",
+                description: error?.message || "Failed to switch chain",
+                variant: "destructive",
+            })
+        }
+    }
+
     if (stakeStep === "source") {
         return (
             <div className="space-y-4">
@@ -308,6 +344,16 @@ export function StakeTab({ pool }: StakeTabProps) {
     if (stakeStep === "confirm") {
         return (
             <div className="space-y-4">
+                {/* Chain validation warning */}
+                {needsChainSwitch && (
+                    <Alert variant="destructive">
+                        <AlertTriangle className="h-4 w-4" />
+                        <AlertDescription>
+                            You're currently on the wrong chain. Please switch to {selectedChainInfo?.name} to proceed with staking.
+                        </AlertDescription>
+                    </Alert>
+                )}
+
                 <div className="rounded-md bg-muted p-4">
                     <h4 className="font-medium mb-2">Confirm Staking Details</h4>
                     <div className="space-y-2 text-sm">
@@ -322,6 +368,18 @@ export function StakeTab({ pool }: StakeTabProps) {
                             <div className="flex items-center space-x-1">
                                 <span className="text-lg">{selectedChainInfo?.logo}</span>
                                 <span className="font-medium">{selectedChainInfo?.name}</span>
+                                {needsChainSwitch && (
+                                    <span className="text-xs text-destructive">(Not Connected)</span>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex justify-between">
+                            <span className="text-muted-foreground">Current Chain:</span>
+                            <div className="flex items-center space-x-1">
+                                <span className="text-sm">{sourceChains.find(c => c.id === currentChainId)?.name || "Unknown"}</span>
+                                {isOnCorrectChain && (
+                                    <span className="text-xs text-green-600">✓ Connected</span>
+                                )}
                             </div>
                         </div>
                         <div className="flex justify-between">
@@ -356,16 +414,29 @@ export function StakeTab({ pool }: StakeTabProps) {
                     <Button variant="outline" onClick={handleConfirmBack} className="flex-1">
                         Back
                     </Button>
-                    <Button onClick={handleStake} disabled={isStaking || !address} className="flex-1">
-                        {isStaking ? (
-                            <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Processing...
-                            </>
-                        ) : (
-                            "Confirm Stake"
-                        )}
-                    </Button>
+                    {needsChainSwitch ? (
+                        <Button onClick={handleChainSwitch} disabled={isSwitchingChain} className="flex-1">
+                            {isSwitchingChain ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Switching...
+                                </>
+                            ) : (
+                                `Switch to ${selectedChainInfo?.name}`
+                            )}
+                        </Button>
+                    ) : (
+                        <Button onClick={handleStake} disabled={isStaking || !address} className="flex-1">
+                            {isStaking ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Processing...
+                                </>
+                            ) : (
+                                "Confirm Stake"
+                            )}
+                        </Button>
+                    )}
                 </div>
             </div>
         )

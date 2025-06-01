@@ -111,7 +111,7 @@ export function StakingPositionCard({
                                                 chainPosition.sourceChain.toLowerCase().includes("hedera") ? "♦️" : "🔗"}
                                         </div>
                                         <div className="flex-1">
-                                            <p className="font-medium">{chainPosition.sourceChain}</p>
+                                            <p className="font-light text-sm">{chainPosition.sourceChain}</p>
                                             <p className="text-sm font-bold">{chainPosition.amount} ETH</p>
                                             <p className="text-xs text-muted-foreground">APY: {chainPosition.apy}%</p>
                                         </div>

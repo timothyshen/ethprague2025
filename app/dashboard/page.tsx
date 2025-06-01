@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useAccount } from "wagmi"
+import { useAccount, useBalance } from "wagmi"
 import { Navbar } from "@/components/layout/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -84,7 +84,7 @@ export default function DashboardPage() {
       chainLogo: "🔷",
       token: "ETH",
       amount: "0",
-      value: `$${(Number.parseFloat("0") * 1700).toFixed(2)}`,
+      value: `$${(totalEthPoolBalanceFormatted * 1700).toFixed(2)}`,
       apy: 12.5,
       rewards: "10.00",
       lockEnd: "2024-02-15",

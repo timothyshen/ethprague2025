@@ -8,9 +8,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { ConnectKitButton } from "connectkit"
 import { TrendingUp, Users, DollarSign, Zap } from "lucide-react"
-import { useState, useEffect, useMemo } from "react"
+import { useState, useEffect, useMemo, useCallback } from "react"
 import Footer from "@/components/layout/footer"
-import { useAggregateAllBalance } from "@/hooks/use-aggregate-all-balance"
+import { useTotalBalances, useBalance } from "@/components/providers/balance-provider"
 
 export default function HomePage() {
   const { isConnected } = useAccount()
@@ -21,14 +21,30 @@ export default function HomePage() {
     pendingRewards: null as string | null,
   })
 
+  const { totalEthPool, userTotal } = useTotalBalances()
+  const { refreshBalances } = useBalance()
 
+  // Memoize the fetch data function to prevent infinite loops
+  const fetchData = useCallback(async () => {
+    await refreshBalances()
+  }, [refreshBalances])
+
+  // Separate effect for initial data fetching
   useEffect(() => {
-    const fetchData = async () => {
-      setStakingData({ totalStaked: "5.05", apy: 12.5, stakedAmount: "5.05", pendingRewards: "10.00" })
+    if (isConnected) {
+      fetchData()
     }
+  }, [isConnected, fetchData])
 
-    fetchData()
-  }, [])
+  // Separate effect for updating staking data when balance values change
+  useEffect(() => {
+    setStakingData(prevData => ({
+      ...prevData,
+      totalStaked: totalEthPool,
+      stakedAmount: userTotal,
+      pendingRewards: "10.00"
+    }))
+  }, [totalEthPool, userTotal])
 
   // Create dynamic staking pools based on user positions and supported chains
   const stakingPools = useMemo(() => {
@@ -64,10 +80,11 @@ export default function HomePage() {
     }
   }
 
-  const stats = [
+  // Memoize stats to prevent unnecessary recalculations
+  const stats = useMemo(() => [
     {
       title: "Total Value Locked",
-      value: "0",
+      value: `$${(Number(totalEthPool) * 2500).toFixed(2)}`,
       icon: DollarSign,
       change: "+12.3%",
     },
@@ -85,11 +102,11 @@ export default function HomePage() {
     },
     {
       title: "Cross-Chain Balance",
-      value: "0",
+      value: `$${(Number(userTotal) * 2500).toFixed(2)}`,
       icon: Zap,
       change: "Aggregated",
     },
-  ]
+  ], [totalEthPool, userTotal])
 
   return (
     <div className="min-h-screen bg-background">

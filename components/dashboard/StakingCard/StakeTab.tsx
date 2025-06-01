@@ -13,6 +13,7 @@ import { useChainBalance } from "@/hooks/use-chain-balance"
 import { sepolia, flowTestnet, hederaTestnet } from "viem/chains"
 import { useAnyStakeContract } from "@/hooks/use-anyStake-contract"
 import { StakingPool } from "./types"
+import { useNotification, ChainInfo } from "@/components/providers/notification-provider"
 
 // Define supported source chains for cross-chain staking
 const sourceChains = [
@@ -20,6 +21,13 @@ const sourceChains = [
     { id: flowTestnet.id, name: "Flow", logo: "🌊", fee: "0.002 ETH" },
     { id: hederaTestnet.id, name: "Hedera", logo: "♦️", fee: "0.0015 ETH" },
 ]
+
+// Destination chain is always Ethereum staking pool
+const destinationChain: ChainInfo = {
+    id: sepolia.id,
+    name: "Ethereum Staking Pool",
+    logo: "🔷"
+}
 
 interface StakeTabProps {
     pool: StakingPool
@@ -35,6 +43,7 @@ export function StakeTab({ pool }: StakeTabProps) {
     const { data: balance } = useBalance({ address })
     const balances = useChainBalance()
     const { deposit, isPending: isStakingPending, isConfirming: isStakingConfirming } = useAnyStakeContract()
+    const { permission, sendStakingNotification } = useNotification()
 
     const isStaking = isStakingPending || isStakingConfirming
     const selectedChainInfo = sourceChains.find((chain) => chain.id === selectedSourceChain)
@@ -73,15 +82,69 @@ export function StakeTab({ pool }: StakeTabProps) {
     }
 
     const handleStake = async () => {
-        if (!stakeAmount || !address || !selectedSourceChain) return
+        if (!stakeAmount || !address || !selectedSourceChain || !selectedChainInfo) return
 
         try {
+            // Send notification for staking initiated
+            if (permission === "granted") {
+                const sourceChainInfo: ChainInfo = {
+                    id: selectedSourceChain,
+                    name: selectedChainInfo.name,
+                    logo: selectedChainInfo.logo
+                }
+
+                sendStakingNotification(
+                    "stake-initiated",
+                    stakeAmount,
+                    pool.token,
+                    sourceChainInfo,
+                    destinationChain
+                )
+            }
+
+            // Call the deposit function
             deposit(selectedSourceChain, parseEther(stakeAmount || "0"))
 
+            // Show toast notification
             toast({
                 title: "Staking Initiated",
                 description: `Staking ${stakeAmount} ${pool.token} from ${selectedChainInfo?.name}`,
             })
+
+            // Mock a successful stake completion after some time (in a real app, this would be triggered by chain events)
+            if (permission === "granted") {
+                setTimeout(() => {
+                    const sourceChainInfo: ChainInfo = {
+                        id: selectedSourceChain,
+                        name: selectedChainInfo.name,
+                        logo: selectedChainInfo.logo
+                    }
+
+                    sendStakingNotification(
+                        "stake-confirmed",
+                        stakeAmount,
+                        pool.token,
+                        sourceChainInfo,
+                        destinationChain
+                    )
+                }, 5000)
+
+                setTimeout(() => {
+                    const sourceChainInfo: ChainInfo = {
+                        id: selectedSourceChain,
+                        name: selectedChainInfo.name,
+                        logo: selectedChainInfo.logo
+                    }
+
+                    sendStakingNotification(
+                        "stake-completed",
+                        stakeAmount,
+                        pool.token,
+                        sourceChainInfo,
+                        destinationChain
+                    )
+                }, 10000)
+            }
 
             setStakeAmount("")
             setStakeStep("source")
@@ -207,8 +270,8 @@ export function StakeTab({ pool }: StakeTabProps) {
                         <div className="flex justify-between">
                             <span className="text-muted-foreground">Destination:</span>
                             <div className="flex items-center space-x-1">
-                                <span className="text-lg">🔷</span>
-                                <span className="font-medium">Ethereum Staking Pool</span>
+                                <span className="text-lg">{destinationChain.logo}</span>
+                                <span className="font-medium">{destinationChain.name}</span>
                             </div>
                         </div>
                         <div className="flex justify-between">
@@ -223,6 +286,12 @@ export function StakeTab({ pool }: StakeTabProps) {
                             <span className="text-muted-foreground">Lock Period:</span>
                             <span className="font-medium">{pool.lockPeriod} days</span>
                         </div>
+                        {permission === "granted" && (
+                            <div className="mt-3 p-2 bg-primary/10 rounded text-sm">
+                                <p className="text-primary font-medium">Notifications enabled</p>
+                                <p className="text-muted-foreground">You'll receive notifications when your staking status changes</p>
+                            </div>
+                        )}
                     </div>
                 </div>
 

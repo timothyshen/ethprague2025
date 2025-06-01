@@ -10,8 +10,8 @@ import { useTheme } from "next-themes"
 import { Button } from "@/components/ui/button"
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
 import { cn } from "@/lib/utils"
-import { NotificationToggle } from "@/components/notification-provider"
-import { NetworkStatus } from "@/components/network-status"
+import { NotificationToggle } from "@/components/providers/notification-provider"
+import { NetworkStatus } from "@/components/layout/network-status"
 
 const navigation = [
   { name: "Stake", href: "/", icon: Coins },

@@ -2,17 +2,19 @@ import type React from "react"
 import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Web3Provider } from "@/components/web3-provider"
+import { ThemeProvider } from "@/components/providers/theme-provider"
+import { Web3Provider } from "@/components/providers/web3-provider"
 import { Toaster } from "@/components/ui/toaster"
-import { NotificationProvider } from "@/components/notification-provider"
+import { NotificationProvider } from "@/components/providers/notification-provider"
+import { BalanceProvider } from "@/components/providers/balance-provider"
+import { TransactionProvider } from "@/components/providers/transaction-provider"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "AnyStake - Cross-Chain Staking Protocol",
   description: "Stake your tokens across multiple chains with ease",
-    generator: 'v0.dev'
+  generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -26,8 +28,12 @@ export default function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <Web3Provider>
             <NotificationProvider>
-              {children}
-              <Toaster />
+              <BalanceProvider>
+                <TransactionProvider>
+                  {children}
+                  <Toaster />
+                </TransactionProvider>
+              </BalanceProvider>
             </NotificationProvider>
           </Web3Provider>
         </ThemeProvider>

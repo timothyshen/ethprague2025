@@ -3,7 +3,7 @@ import { CONTRACTS_NEW } from "@/lib/contracts";
 import { AnyStakeAbi } from "@/lib/anyStakeAbi";
 import { StakingAggregatorAbi } from "@/lib/stakingAggregatorAbi";
 import { useToast } from "@/hooks/use-toast";
-import { useNotification } from "@/components/notification-provider";
+import { useNotification } from "@/components/providers/notification-provider";
 import { useState, useCallback, useEffect } from "react";
 
 export function useContractEvents(userAddress?: `0x${string}`) {

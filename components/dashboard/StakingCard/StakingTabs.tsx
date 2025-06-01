@@ -12,6 +12,22 @@ import { useToast } from "@/hooks/use-toast"
 import { useAnyStakeContract } from "@/hooks/use-anyStake-contract"
 import { StakingPool } from "./types"
 import { StakeTab } from "./StakeTab"
+import { useNotification, ChainInfo } from "@/components/providers/notification-provider"
+import { sepolia } from "viem/chains"
+
+// Destination chain for unstaking is always Ethereum
+const destinationChain: ChainInfo = {
+    id: sepolia.id,
+    name: "Ethereum",
+    logo: "🔷"
+}
+
+// Source chain for unstaking is always the staking pool
+const sourceChain: ChainInfo = {
+    id: sepolia.id,
+    name: "Ethereum Staking Pool",
+    logo: "🔷"
+}
 
 interface StakingTabsProps {
     pool: StakingPool
@@ -23,6 +39,7 @@ export function StakingTabs({ pool }: StakingTabsProps) {
     const { toast } = useToast()
     const { data: balance } = useBalance({ address })
     const { isPending: isStakingPending, isConfirming: isStakingConfirming } = useAnyStakeContract()
+    const { permission, sendStakingNotification } = useNotification()
 
     const isStaking = isStakingPending || isStakingConfirming
 
@@ -30,10 +47,45 @@ export function StakingTabs({ pool }: StakingTabsProps) {
         if (!unstakeAmount || !address) return
 
         try {
+            // Send notification for unstaking initiated
+            if (permission === "granted") {
+                sendStakingNotification(
+                    "unstake-initiated",
+                    unstakeAmount,
+                    pool.token,
+                    sourceChain,
+                    destinationChain
+                )
+            }
+
             toast({
                 title: "Unstaking Initiated",
                 description: `Unstaking ${unstakeAmount} ${pool.token}`,
             })
+
+            // Mock a successful unstake completion after some time (in a real app, this would be triggered by chain events)
+            if (permission === "granted") {
+                setTimeout(() => {
+                    sendStakingNotification(
+                        "unstake-confirmed",
+                        unstakeAmount,
+                        pool.token,
+                        sourceChain,
+                        destinationChain
+                    )
+                }, 5000)
+
+                setTimeout(() => {
+                    sendStakingNotification(
+                        "unstake-completed",
+                        unstakeAmount,
+                        pool.token,
+                        sourceChain,
+                        destinationChain
+                    )
+                }, 10000)
+            }
+
             setUnstakeAmount("")
         } catch (error) {
             console.error("Unstaking error:", error)
@@ -81,6 +133,13 @@ export function StakingTabs({ pool }: StakingTabsProps) {
                         Staked: {pool.userStaked} {pool.token}
                     </p>
                 </div>
+
+                {permission === "granted" && (
+                    <div className="p-2 bg-primary/10 rounded text-sm mb-2">
+                        <p className="text-primary font-medium">Notifications enabled</p>
+                        <p className="text-muted-foreground">You'll receive notifications when your unstaking status changes</p>
+                    </div>
+                )}
 
                 <Button
                     onClick={handleUnstake}

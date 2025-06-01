@@ -2,7 +2,7 @@
 
 import { useAccount } from "wagmi"
 import { Navbar } from "@/components/layout/navbar"
-import { ChainSelector } from "@/components/chain-selector"
+import { ChainSelector } from "@/components/layout/chain-selector"
 import { StakingCard } from "@/components/dashboard/StakingCard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"

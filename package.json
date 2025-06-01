@@ -46,6 +46,7 @@
     "connectkit": "latest",
     "date-fns": "4.1.0",
     "embla-carousel-react": "8.5.1",
+    "immer": "^10.1.1",
     "input-otp": "1.4.1",
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
@@ -63,7 +64,8 @@
     "vaul": "^0.9.6",
     "viem": "latest",
     "wagmi": "latest",
-    "zod": "^3.24.1"
+    "zod": "^3.24.1",
+    "zustand": "^5.0.5"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.8",

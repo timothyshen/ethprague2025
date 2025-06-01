@@ -1,7 +1,7 @@
 "use client"
 
 import { Navbar } from "@/components/layout/navbar"
-import { RewardsCalculator } from "@/components/rewards-calculator"
+import { RewardsCalculator } from "@/components/DataAnalytics/rewards-calculator"
 
 export default function CalculatorPage() {
   return (

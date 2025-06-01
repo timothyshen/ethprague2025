@@ -307,13 +307,7 @@ export function StakingTransactionTracker() {
     }
   }
 
-  const handleClearHistory = () => {
-    clearCompletedTransactions()
-    toast({
-      title: "Transaction history cleared",
-      description: "Completed and failed transactions have been removed",
-    })
-  }
+
 
   const handleRefreshBalances = () => {
     refreshBalances()
@@ -393,11 +387,6 @@ export function StakingTransactionTracker() {
               <p className="text-sm text-muted-foreground">
                 {completedTransactions.length} completed transaction(s)
               </p>
-              {completedTransactions.length > 0 && (
-                <Button variant="outline" size="sm" onClick={handleClearHistory}>
-                  Clear History
-                </Button>
-              )}
             </div>
             {completedTransactions.length > 0 ? (
               completedTransactions.map((transaction) => (

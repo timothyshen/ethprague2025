@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useMemo } from "react"
 import { useAccount, useBalance } from "wagmi"
 import { Navbar } from "@/components/layout/navbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -15,61 +15,15 @@ import { useAnyStakeContract } from "@/hooks/use-anyStake-contract"
 import { flowTestnet, hederaTestnet, sepolia } from "viem/chains"
 import {
   StakingPositionCard,
-  ChainPosition,
   StakingPosition,
   UnstakeDialog,
   StakingOverviewCards,
-  TransactionHistoryList,
-  Transaction
 } from "@/components/dashboard"
 import { useTotalBalances, useBalance as useBalanceProvider } from "@/components/providers/balance-provider"
 import { useTransactions } from "@/components/providers/transaction-provider"
 import { useNotification, ChainInfo } from "@/components/providers/notification-provider"
 import { StakingTransactionTracker } from "@/components/DataAnalytics/stake-transaction-tracker"
-import { RewardsCalculator } from "@/components/DataAnalytics/rewards-calculator"
 
-const transactions: Transaction[] = [
-  {
-    id: "1",
-    type: "Stake",
-    amount: "1.5 ETH",
-    sourceChain: "Ethereum",
-    chainLogo: "🔷",
-    hash: "0x1234...5678",
-    timestamp: "2024-01-15 14:30",
-    status: "Confirmed",
-  },
-  {
-    id: "2",
-    type: "Stake",
-    amount: "0.5 ETH",
-    sourceChain: "Flow",
-    chainLogo: "🌊",
-    hash: "0x3456...7890",
-    timestamp: "2024-01-16 10:15",
-    status: "Confirmed",
-  },
-  {
-    id: "3",
-    type: "Stake",
-    amount: "0.5 ETH",
-    sourceChain: "Hedera",
-    chainLogo: "♦️",
-    hash: "0x5678...9012",
-    timestamp: "2024-01-17 09:45",
-    status: "Confirmed",
-  },
-  {
-    id: "4",
-    type: "Claim",
-    amount: "0.05 ETH",
-    sourceChain: "Ethereum",
-    chainLogo: "🔷",
-    hash: "0x2345...6789",
-    timestamp: "2024-01-14 09:15",
-    status: "Confirmed",
-  },
-]
 
 // Chain info for notifications
 const getChainInfo = (chainId: number): ChainInfo => {
@@ -103,25 +57,65 @@ export default function DashboardPage() {
   const isPending = false
   const { withdraw, isPending: isWithdrawPending, isConfirming: isWithdrawConfirming } = useAnyStakeContract()
   const { totalEthPool: totalEthPoolBalanceFormatted, userTotal: totalBalance } = useTotalBalances()
-  const { setUserStakedBalance } = useBalanceProvider()
+  const { setUserStakedBalance, chainBalances } = useBalanceProvider()
   const { addTransaction, updateTransactionHash } = useTransactions()
   const { permission, sendStakingNotification } = useNotification()
 
-  const stakingPositions: StakingPosition[] = [
-    {
-      id: "1",
-      pool: "ETH Staking Pool",
-      sourceChain: "Ethereum",
-      chainLogo: "🔷",
-      token: "ETH",
-      amount: "0",
-      value: `$${(Number(totalEthPoolBalanceFormatted) * 1700).toFixed(2)}`,
-      apy: 12.5,
-      rewards: "10.00",
-      lockEnd: "2024-02-15",
-      status: "Active",
-    },
-  ]
+  // Calculate active chains based on user staked balances
+  const activeChains = useMemo(() => {
+    return Object.values(chainBalances).filter(chain =>
+      parseFloat(chain.userStakedBalance) > 0
+    ).length
+  }, [chainBalances])
+
+  // Generate staking positions from balance provider data
+  const stakingPositions: StakingPosition[] = useMemo(() => {
+    const positions: StakingPosition[] = []
+
+    // Create aggregated position from all staking chains
+    const totalUserStaked = parseFloat(totalBalance || "0")
+    const totalPoolValue = parseFloat(totalEthPoolBalanceFormatted || "0")
+
+    if (totalUserStaked > 0 || totalPoolValue > 0) {
+      positions.push({
+        id: "aggregated-eth-pool",
+        pool: "ETH Staking Pool",
+        sourceChain: "Cross-Chain",
+        chainLogo: "🔷",
+        token: "ETH",
+        amount: totalBalance,
+        value: `$${(totalUserStaked * 2500).toFixed(2)}`, // Assuming $2500 per ETH
+        apy: 12.5, // Average APY across chains
+        rewards: (totalUserStaked * 0.1).toFixed(4), // 10% rewards estimation
+        lockEnd: "2024-12-31",
+        status: totalUserStaked > 0 ? "Active" : "Available",
+      })
+    }
+
+    // If no positions, create a default one
+    if (positions.length === 0) {
+      positions.push({
+        id: "default-eth-pool",
+        pool: "ETH Staking Pool",
+        sourceChain: "Cross-Chain",
+        chainLogo: "🔷",
+        token: "ETH",
+        amount: "0.00",
+        value: "$0.00",
+        apy: 12.5,
+        rewards: "0.00",
+        lockEnd: "2024-12-31",
+        status: "Available",
+      })
+    }
+
+    return positions
+  }, [totalBalance, totalEthPoolBalanceFormatted])
+
+  // Calculate total rewards from all positions
+  const totalRewards = useMemo(() => {
+    return stakingPositions.reduce((sum, pos) => sum + parseFloat(pos.rewards), 0)
+  }, [stakingPositions])
 
   const handleUnstake = async () => {
     if (!selectedPosition) return
@@ -248,8 +242,6 @@ export default function DashboardPage() {
     )
   }
 
-  const totalRewards = stakingPositions.reduce((sum, pos) => sum + Number.parseFloat(pos.rewards), 0)
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -265,7 +257,7 @@ export default function DashboardPage() {
           totalBalance={totalEthPoolBalanceFormatted}
           totalRewards={totalRewards}
           totalPositions={stakingPositions.length}
-          totalChains={1}
+          totalChains={activeChains}
         />
 
         {/* Transaction Monitor */}
@@ -281,7 +273,6 @@ export default function DashboardPage() {
               Rewards
             </TabsTrigger>
             <TabsTrigger value="positions">Staking Positions</TabsTrigger>
-            <TabsTrigger value="transactions">Transaction History</TabsTrigger>
           </TabsList>
 
           <TabsContent value="analytics" className="space-y-6">
@@ -318,15 +309,11 @@ export default function DashboardPage() {
                   key={position.id}
                   position={position}
                   totalBalance={totalEthPoolBalanceFormatted}
-                  totalChains={3}
+                  totalChains={activeChains}
                   onUnstake={() => handlePositionUnstake(position, flowTestnet.id)}
                 />
               ))}
             </div>
-          </TabsContent>
-
-          <TabsContent value="transactions" className="space-y-6">
-            <TransactionHistoryList transactions={transactions} />
           </TabsContent>
         </Tabs>
 

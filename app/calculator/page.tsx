@@ -1,6 +1,6 @@
 "use client"
 
-import { Navbar } from "@/components/navbar"
+import { Navbar } from "@/components/layout/navbar"
 import { RewardsCalculator } from "@/components/rewards-calculator"
 
 export default function CalculatorPage() {

@@ -2,7 +2,6 @@ import { useBalance } from "wagmi";
 import { useAccount } from "wagmi";
 import { flowTestnet, hederaTestnet, sepolia, baseSepolia } from "viem/chains";
 
-
 export function useChainBalance(): Record<number, any> {
   const { address } = useAccount();
 

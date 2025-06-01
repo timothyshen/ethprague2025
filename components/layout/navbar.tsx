@@ -30,7 +30,7 @@ export function Navbar() {
         <div className="flex h-16 justify-between">
           <div className="flex items-center">
             <Link href="/" className="flex items-center space-x-2">
-              <Image 
+              <Image
                 src="/logo.png"
                 alt="AnyStake Logo"
                 width={32}

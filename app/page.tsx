@@ -22,7 +22,7 @@ export default function HomePage() {
   })
 
   const { totalEthPool, userTotal } = useTotalBalances()
-  const { refreshBalances } = useBalance()
+  const { refreshBalances, chainBalances } = useBalance()
 
   // Memoize the fetch data function to prevent infinite loops
   const fetchData = useCallback(async () => {
@@ -46,11 +46,60 @@ export default function HomePage() {
     }))
   }, [totalEthPool, userTotal])
 
-  // Create dynamic staking pools based on user positions and supported chains
+  // Create dynamic staking pools based on user positions and supported chains from store
   const stakingPools = useMemo(() => {
-    const pools = [
-      {
-        id: "eth-mainnet",
+    const pools: Array<{
+      id: string
+      name: string
+      token: string
+      apy: number
+      totalStaked: string
+      userStaked: string
+      lockPeriod: number
+      minStake: string
+      chainName: string
+      chainId: number
+    }> = []
+
+    // Create pools from each chain's data
+    Object.entries(chainBalances).forEach(([chainKey, chainData]) => {
+      // Add pools from this chain
+      chainData.pools.forEach((pool) => {
+        pools.push({
+          id: `${chainKey}-${pool.id}`,
+          name: `${pool.name} (${chainData.chainName})`,
+          token: "ETH",
+          apy: pool.apy,
+          totalStaked: pool.totalStaked,
+          userStaked: chainData.userStakedBalance,
+          lockPeriod: 30,
+          minStake: "0.001",
+          chainName: chainData.chainName,
+          chainId: chainData.chainId,
+        })
+      })
+
+      // If no pools exist for this chain, create a default one
+      if (chainData.pools.length === 0 && parseFloat(chainData.totalPoolBalance) > 0) {
+        pools.push({
+          id: `${chainKey}-default`,
+          name: `ETH Staking Pool (${chainData.chainName})`,
+          token: "ETH",
+          apy: 12.5, // Default APY
+          totalStaked: chainData.totalPoolBalance,
+          userStaked: chainData.userStakedBalance,
+          lockPeriod: 30,
+          minStake: "0.001",
+          chainName: chainData.chainName,
+          chainId: chainData.chainId,
+        })
+      }
+    })
+
+    // If no pools at all, show a default ETH pool
+    if (pools.length === 0) {
+      pools.push({
+        id: "eth-default",
         name: "ETH Staking Pool",
         token: "ETH",
         apy: stakingData.apy || 12.5,
@@ -58,25 +107,21 @@ export default function HomePage() {
         userStaked: stakingData.stakedAmount || "0.00",
         lockPeriod: 30,
         minStake: "0.001",
-      },
-    ];
+        chainName: "Ethereum",
+        chainId: 11155111,
+      })
+    }
 
-    return pools;
-  }, [stakingData]);
+    return pools
+  }, [chainBalances, stakingData])
 
   // Helper function to get dynamic grid classes based on pool count
   const getGridClasses = (poolCount: number): string => {
     if (poolCount === 1) {
       return "grid grid-cols-1 mx-auto gap-6"
-    } else if (poolCount === 2) {
-      return "grid grid-cols-1 lg:grid-cols-2 max-w-4xl mx-auto gap-6"
-    } else if (poolCount === 3) {
-      return "grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6"
-    } else if (poolCount === 4) {
-      return "grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6"
     } else {
       // For 5+ pools, use a responsive grid that shows up to 3 per row
-      return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+      return "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6"
     }
   }
 

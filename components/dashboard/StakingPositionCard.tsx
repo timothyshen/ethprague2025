@@ -3,10 +3,31 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { ChainPosition, StakingPosition } from "./types"
+import { flowTestnet, hederaTestnet } from "viem/chains"
 
+
+const chainPositions: ChainPosition[] = [
+    {
+        chainId: flowTestnet.id,
+        amount: "100",
+        token: "ETH",
+        rewards: "10",
+        apy: 12.5,
+        status: "Active",
+        sourceChain: "Flow",
+    },
+    {
+        chainId: hederaTestnet.id,
+        amount: "100",
+        token: "ETH",
+        rewards: "10",
+        apy: 12.5,
+        status: "Active",
+        sourceChain: "Hedera",
+    }
+]
 interface StakingPositionCardProps {
     position: StakingPosition
-    chainPositions: ChainPosition[]
     totalBalance: string | undefined
     totalChains: number
     onUnstake: (position: StakingPosition, chainId: number) => void
@@ -14,7 +35,6 @@ interface StakingPositionCardProps {
 
 export function StakingPositionCard({
     position,
-    chainPositions,
     totalBalance,
     totalChains,
     onUnstake,

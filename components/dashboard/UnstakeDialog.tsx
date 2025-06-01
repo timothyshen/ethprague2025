@@ -20,6 +20,7 @@ interface UnstakeDialogProps {
     setDestinationChain: (chain: string) => void
     totalBalance: string | undefined
     onUnstake: () => void
+    isLoading: boolean
 }
 
 export function UnstakeDialog({

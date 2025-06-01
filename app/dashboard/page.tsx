@@ -22,6 +22,7 @@ import {
   TransactionHistoryList,
   Transaction
 } from "@/components/dashboard"
+import { useTotalBalances } from "@/components/providers/balance-provider"
 
 const transactions: Transaction[] = [
   {
@@ -76,6 +77,8 @@ export default function DashboardPage() {
   const isPending = false
   const { withdraw, isPending: isWithdrawPending, isConfirming: isWithdrawConfirming } = useAnyStakeContract()
 
+  const { totalEthPool, userTotal } = useTotalBalances()
+
   const stakingPositions: StakingPosition[] = [
     {
       id: "1",
@@ -84,7 +87,7 @@ export default function DashboardPage() {
       chainLogo: "🔷",
       token: "ETH",
       amount: "0",
-      value: `$${(totalEthPoolBalanceFormatted * 1700).toFixed(2)}`,
+      value: `$${(Number(totalEthPool) * 1700).toFixed(2)}`,
       apy: 12.5,
       rewards: "10.00",
       lockEnd: "2024-02-15",
@@ -92,26 +95,6 @@ export default function DashboardPage() {
     },
   ]
 
-  const chainPositions: ChainPosition[] = [
-    {
-      chainId: flowTestnet.id,
-      amount: "100",
-      token: "ETH",
-      rewards: "10",
-      apy: 12.5,
-      status: "Active",
-      sourceChain: "Flow",
-    },
-    {
-      chainId: hederaTestnet.id,
-      amount: "100",
-      token: "ETH",
-      rewards: "10",
-      apy: 12.5,
-      status: "Active",
-      sourceChain: "Hedera",
-    }
-  ]
 
   const handleUnstake = () => {
     if (!selectedPosition) return
@@ -120,7 +103,7 @@ export default function DashboardPage() {
 
     toast({
       title: "Unstaking Initiated",
-      description: `Unstaking ${totalBalance} ${selectedPosition.position.token} to ${destinationChain}`,
+      description: `Unstaking 20 ${selectedPosition.position.token} to ${destinationChain}`,
     })
 
     setUnstakeDialogOpen(false)
@@ -223,13 +206,12 @@ export default function DashboardPage() {
 
           <TabsContent value="positions" className="space-y-6">
             <div className="grid gap-6">
-              {/* {stakingPositions.map((position) => (
+              {stakingPositions.map((position) => (
                 <StakingPositionCard
                   key={position.id}
                   position={position}
-                  onUnstake={() => handlePositionUnstake(position, flowTestnet.id)}
-                />
-              ))} */}
+                  onUnstake={() => handlePositionUnstake(position, flowTestnet.id)} chainPositions={[]} totalBalance={undefined} totalChains={0} />
+              ))}
 
               {/* {chainPositions.map((position) => (
                 <StakingPositionCard
@@ -270,15 +252,16 @@ export default function DashboardPage() {
           </TabsContent>
         </Tabs>
 
-        {/* <UnstakeDialog
+        <UnstakeDialog
           open={unstakeDialogOpen}
           onOpenChange={setUnstakeDialogOpen}
-          position={selectedPosition?.position || null}
+          selectedPosition={selectedPosition || null}
           destinationChain={destinationChain}
-          onDestinationChainChange={setDestinationChain}
+          setDestinationChain={setDestinationChain}
           onUnstake={handleUnstake}
           isLoading={isWithdrawPending || isWithdrawConfirming}
-        /> */}
+          totalBalance={undefined}
+        />
       </main>
     </div>
   )

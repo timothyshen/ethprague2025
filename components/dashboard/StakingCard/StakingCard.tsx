@@ -14,12 +14,11 @@ interface StakingCardProps {
 export function StakingCard({ pool }: StakingCardProps) {
     const { address } = useAccount()
 
-    // Update pool data with static values (since we removed the aggregator contract)
+    // Use the actual pool data from the store
     const updatedPool = {
         ...pool,
-        totalStaked: "1250.5432", // Static value for now
-        apy: 10,
-        userStaked: address ? "5.00" : "0.00",
+        // Only fallback to default values if data is missing
+        userStaked: address ? pool.userStaked : "0.00",
     }
 
     return (

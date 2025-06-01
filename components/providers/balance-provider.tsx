@@ -5,7 +5,7 @@ import { immer } from 'zustand/middleware/immer'
 import { useMemo } from 'react'
 
 // Define chain types
-export type SupportedChain = 'ethereum' | 'flow' | 'hedera'
+export type SupportedChain = 'ethereum'
 
 // Chain configuration
 export const CHAIN_CONFIG = {
@@ -102,8 +102,6 @@ const initialState = {
     totalEthPoolBalanceFormatted: '0.00',
     chainBalances: {
         ethereum: { ...initialChainBalance, chainId: CHAIN_CONFIG.ethereum.id, chainName: CHAIN_CONFIG.ethereum.name },
-        flow: { ...initialChainBalance, chainId: CHAIN_CONFIG.flow.id, chainName: CHAIN_CONFIG.flow.name },
-        hedera: { ...initialChainBalance, chainId: CHAIN_CONFIG.hedera.id, chainName: CHAIN_CONFIG.hedera.name }
     },
     userTotalBalance: '0',
     userTotalBalanceFormatted: '0.00',
@@ -187,24 +185,10 @@ export const useBalanceStore = create<BalanceState>()(
                         totalPoolBalance: '30',
                         userStakedBalance: '20',
                         pools: [
-                            { id: 'flow-staking', name: 'Flow Staking Pool', apy: 6.1, totalStaked: '10', totalStakedFormatted: '10' },
-                            { id: 'hedera-staking', name: 'Hedera Staking Pool', apy: 7.3, totalStaked: '20', totalStakedFormatted: '20' },
+                            { id: 'flow-staking', name: 'Flow Pool', apy: 6.1, totalStaked: '10', totalStakedFormatted: '10' },
+                            { id: 'hedera-staking', name: 'Hedera Pool', apy: 7.3, totalStaked: '20', totalStakedFormatted: '20' },
                         ]
                     },
-                    flow: {
-                        totalPoolBalance: '567.8901',
-                        userStakedBalance: '8.9012',
-                        pools: [
-                            { id: 'flow-staking', name: 'Flow Staking Pool', apy: 6.1, totalStaked: '567.8901', totalStakedFormatted: '567.8901' }
-                        ]
-                    },
-                    hedera: {
-                        totalPoolBalance: '234.5678',
-                        userStakedBalance: '4.5678',
-                        pools: [
-                            { id: 'hedera-staking', name: 'Hedera Staking Pool', apy: 7.3, totalStaked: '234.5678', totalStakedFormatted: '234.5678' }
-                        ]
-                    }
                 }
 
                 // Simulate network delay

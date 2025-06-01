@@ -8,7 +8,7 @@ import {
 import { CONTRACTS_NEW } from "@/lib/contracts";
 import { AnyStakeAbi } from "@/lib/anyStakeabi";
 import { useToast } from "@/hooks/use-toast";
-import { ExecutorOptionType, Options } from "@layerzerolabs/lz-v2-utilities";
+import { Options } from "@layerzerolabs/lz-v2-utilities";
 import { parseEther } from "viem";
 
 export function useAnyStakeContract() {
@@ -25,28 +25,28 @@ export function useAnyStakeContract() {
     .toString();
 
   const lockedBalancesData = (chainId: number, address: `0x${string}`) => {
-    return useReadContract({
+    const lockedBalances = useReadContract({
       address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
         .anyStake as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "lockedBalances",
       args: [address],
     });
+    return lockedBalances;
   };
 
   const pendingWithdrawalData = (chainId: number, guid: `0x${string}`) => {
-    return useReadContract({
+    const pendingWithdrawal = useReadContract({
       address: CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]
         .anyStake as `0x${string}`,
       abi: AnyStakeAbi,
       functionName: "getPendingWithdrawal",
       args: [guid],
     });
+    return pendingWithdrawal;
   };
 
   const depositQuoteData = (chainId: number, _amount: bigint) => {
-    const dstEid =
-      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW].endpointId;
     const contractAddress =
       CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
     const composedAddress =
@@ -61,8 +61,6 @@ export function useAnyStakeContract() {
   };
 
   const withdrawQuoteData = (chainId: number, _amount: bigint) => {
-    const dstEid =
-      CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW].endpointId;
     const contractAddress =
       CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
     const composedAddress =
@@ -85,8 +83,6 @@ export function useAnyStakeContract() {
 
   const deposit = (chainId: number, _amount: bigint) => {
     try {
-      const dstEid =
-        CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW].endpointId;
       const contractAddress =
         CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
       const composedAddress =
@@ -95,12 +91,11 @@ export function useAnyStakeContract() {
       if (!contractAddress) {
         throw new Error(`Contract address not found for chain ID: ${chainId}`);
       }
-      console.log("deposit", _amount, dstEid, composedAddress, options);
       writeContract({
         address: contractAddress as `0x${string}`,
         abi: AnyStakeAbi,
         functionName: "deposit",
-        value: _amount + parseEther("2"),
+        value: _amount + parseEther("10"),
         args: [40161, _amount, composedAddress, options],
       });
 
@@ -121,8 +116,6 @@ export function useAnyStakeContract() {
 
   const withdraw = (chainId: number, _amount: bigint) => {
     try {
-      const dstEid =
-        CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW].endpointId;
       const contractAddress =
         CONTRACTS_NEW[chainId as keyof typeof CONTRACTS_NEW]?.anyStake;
       const composedAddress =
@@ -169,5 +162,6 @@ export function useAnyStakeContract() {
     hash,
     isPending,
     isConfirming,
+    isConfirmed,
   };
 }

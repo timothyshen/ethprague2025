@@ -1,18 +1,16 @@
 "use client"
 
-// TESTING: Uncomment the line below and comment out the real import to use mock data
-import { useAggregateAllBalanceMock } from "@/hooks/use-aggregate-all-balance-mock"
-// import { useAggregateAllBalance } from "@/hooks/use-aggregate-all-balance"
-import { useAccount, useChainId } from "wagmi"
-import { Navbar } from "@/components/navbar"
+import { useAccount } from "wagmi"
+import { Navbar } from "@/components/layout/navbar"
 import { ChainSelector } from "@/components/chain-selector"
-import { StakingCard } from "@/components/staking-card"
+import { StakingCard } from "@/components/dashboard/StakingCard"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ConnectKitButton } from "connectkit"
 import { TrendingUp, Users, DollarSign, Zap } from "lucide-react"
 import { useState, useEffect, useMemo } from "react"
-import Footer from "@/components/footer"
+import Footer from "@/components/layout/footer"
+import { useAggregateAllBalance } from "@/hooks/use-aggregate-all-balance"
 
 export default function HomePage() {
   const { isConnected } = useAccount()
@@ -26,10 +24,9 @@ export default function HomePage() {
   const {
     totalBalance,
     positions,
-    chainsWithBalance,
     totalChains,
     isLoading: isBalanceLoading
-  } = useAggregateAllBalanceMock()
+  } = useAggregateAllBalance()
 
   useEffect(() => {
     const fetchData = async () => {
@@ -82,7 +79,7 @@ export default function HomePage() {
     },
     {
       title: "Active Positions",
-      value: chainsWithBalance.toString(),
+      value: 100,
       icon: Users,
       change: `${totalChains} chains`,
     },
